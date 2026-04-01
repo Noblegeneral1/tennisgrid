@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATP Grid - Daily Tennis Trivia</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-top">
+      <div class="header-left">
+        <button id="how-to-play-btn" class="icon-btn" title="How to Play">?</button>
+        <button id="archive-btn" class="icon-btn" title="Past Grids">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </button>
+      </div>
+      <div class="header-center">
+        <h1 class="app-title">
+          <span class="title-atp">ATP</span><span class="title-grid">GRID</span>
+        </h1>
+      </div>
+      <div class="header-right">
+        <div id="guess-counter" class="strikes-container">
+          <div id="strikes-display" class="strikes-display">
+            <span class="strike-x">X</span>
+            <span class="strike-x">X</span>
+            <span class="strike-x">X</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="current-date-display" class="date-display">Today's Grid</div>
+  </header>
+
+  <!-- ARCHIVE PANEL -->
+  <div id="archive-panel" class="archive-panel">
+    <div class="archive-header">
+      <h3>Past Grids</h3>
+      <button id="close-archive" class="modal-close">&times;</button>
+    </div>
+    <div id="archive-list" class="archive-list"></div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <main class="app-main">
+    <div id="grid-container" class="grid-container"></div>
+  </main>
+
+  <!-- SEARCH MODAL -->
+  <div id="search-modal" class="modal-overlay">
+    <div class="modal-content search-modal-content">
+      <div class="modal-header">
+        <div id="modal-header-info" class="modal-header-info"></div>
+        <button id="close-search" class="modal-close">&times;</button>
+      </div>
+      <div class="search-bar">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search for a player..." autocomplete="off" spellcheck="false">
+      </div>
+      <div id="guess-error" class="guess-error"></div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="game-over-modal" class="modal-overlay">
+    <div class="modal-content game-over-content">
+      <button id="close-game-over" class="modal-close">&times;</button>
+      <h2 class="game-over-title">Game Over!</h2>
+      <div id="game-over-stats" class="game-over-stats"></div>
+      <div class="game-over-actions">
+        <button id="share-btn" class="btn btn-primary">Share Results</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW TO PLAY MODAL -->
+  <div id="how-to-play-modal" class="modal-overlay">
+    <div class="modal-content how-to-play-content">
+      <button id="close-how-to-play" class="modal-close">&times;</button>
+      <h2>How to Play</h2>
+      <div class="htp-body">
+        <p>Select an ATP player for each cell that matches <strong>both</strong> the row and column categories.</p>
+        <div class="htp-rules">
+          <div class="htp-rule">
+            <span class="htp-num">1</span>
+            <span>Click any empty cell to open the player search</span>
+          </div>
+          <div class="htp-rule">
+            <span class="htp-num">2</span>
+            <span>Search and select a player who fits both categories</span>
+          </div>
+          <div class="htp-rule">
+            <span class="htp-num">3</span>
+            <span>You have <strong>3 strikes</strong> &mdash; only <strong>wrong</strong> guesses cost a strike</span>
+          </div>
+          <div class="htp-rule">
+            <span class="htp-num">4</span>
+            <span>Correct guesses are free! No penalty for getting it right</span>
+          </div>
+          <div class="htp-rule">
+            <span class="htp-num">5</span>
+            <span>Each player can only be used <strong>once</strong> per grid</span>
+          </div>
+        </div>
+        <div class="htp-section">
+          <h3>Rarity Scoring</h3>
+          <p>After filling a cell, you'll see a rarity %. Lower = more unique answer.</p>
+          <div class="rarity-legend">
+            <span class="rarity-dot" style="background: rgba(45,106,79,0.95)"></span> Very Rare
+            <span class="rarity-dot" style="background: rgba(82,183,136,0.7)"></span> Uncommon
+            <span class="rarity-dot" style="background: rgba(244,162,97,0.7)"></span> Common
+            <span class="rarity-dot" style="background: rgba(231,111,81,0.75)"></span> Very Common
+          </div>
+        </div>
+        <div class="htp-section">
+          <h3>Category Rules</h3>
+          <ul class="htp-clarifications">
+            <li><strong>Grand Slams</strong> &mdash; Men's Singles titles only</li>
+            <li><strong>Former #1 / Year-End #1</strong> &mdash; ATP Singles ranking</li>
+            <li><strong>Davis Cup Champion</strong> &mdash; Won the Davis Cup representing their country (any role)</li>
+            <li><strong>ATP Finals</strong> &mdash; Won the year-end championship event (Singles)</li>
+            <li><strong>Olympic Gold</strong> &mdash; Singles gold medal at the Summer Olympics</li>
+            <li><strong>Nationality</strong> &mdash; Country the player represented on the ATP Tour</li>
+            <li><strong>Played in [decade]</strong> &mdash; Was active on the ATP Tour during that decade</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div id="share-text-modal" class="modal-overlay">
+    <div class="modal-content share-text-content">
+      <button id="close-share-text" class="modal-close">&times;</button>
+      <h2>Share Your Results</h2>
+      <div id="share-copy-status" class="share-status"></div>
+      <textarea id="share-text-area" readonly rows="8"></textarea>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer">
+    <button id="share-btn-footer" class="btn btn-share-footer">Share Results</button>
+    <div class="footer-info">
+      <span>A new grid every day</span>
+      <span class="footer-dot">&middot;</span>
+      <span id="player-count"></span>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS (order matters) -->
+  <script src="js/icons.js"></script>
+  <script src="js/players.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById('player-count').textContent = PLAYERS.length + ' players';
+  </script>
+</body>
+</html>
