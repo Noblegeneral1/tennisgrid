@@ -624,6 +624,7 @@ body {
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
+  padding: 0 36px;
 }
 
 .modal-cat {
@@ -896,10 +897,18 @@ body {
   color: var(--text-secondary);
 }
 
+.rarity-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
 .rarity-dot {
   width: 10px; height: 10px;
   border-radius: 3px;
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .htp-clarifications {

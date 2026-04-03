@@ -54,7 +54,18 @@ const RarityService = (function() {
 
       const playerCount = data[playerId] || 0;
       const total = data['_total'] || 1;
-      return Math.max(1, Math.min(99, Math.round((playerCount / total) * 100)));
+      const liveRarity = (playerCount / total) * 100;
+
+      // With few responses, live data is unreliable (1/1 = 100%)
+      // Blend toward local estimate until we have enough data
+      const MIN_RESPONSES = 20;
+      if (total < MIN_RESPONSES) {
+        const local = localRarity(dateStr, cellKey, playerId);
+        const weight = total / MIN_RESPONSES; // 0 to 1
+        const blended = local * (1 - weight) + liveRarity * weight;
+        return Math.max(1, Math.min(99, Math.round(blended)));
+      }
+      return Math.max(1, Math.min(99, Math.round(liveRarity)));
     } catch (e) {
       console.warn('[Rarity] Firebase write failed:', e.message);
       return localRarity(dateStr, cellKey, playerId);
@@ -65,12 +76,22 @@ const RarityService = (function() {
   async function getRarity(dateStr, cellKey, playerId) {
     init();
 
-    // Check cache first
-    if (cache[dateStr] && cache[dateStr][cellKey]) {
-      const data = cache[dateStr][cellKey];
+    function blendRarity(data, dateStr, cellKey, playerId) {
       const playerCount = data[playerId] || 0;
       const total = data['_total'] || 1;
-      return Math.max(1, Math.min(99, Math.round((playerCount / total) * 100)));
+      const liveRarity = (playerCount / total) * 100;
+      const MIN_RESPONSES = 20;
+      if (total < MIN_RESPONSES) {
+        const local = localRarity(dateStr, cellKey, playerId);
+        const weight = total / MIN_RESPONSES;
+        return Math.max(1, Math.min(99, Math.round(local * (1 - weight) + liveRarity * weight)));
+      }
+      return Math.max(1, Math.min(99, Math.round(liveRarity)));
+    }
+
+    // Check cache first
+    if (cache[dateStr] && cache[dateStr][cellKey]) {
+      return blendRarity(cache[dateStr][cellKey], dateStr, cellKey, playerId);
     }
 
     if (!db) {
@@ -84,9 +105,7 @@ const RarityService = (function() {
       if (!cache[dateStr]) cache[dateStr] = {};
       cache[dateStr][cellKey] = data;
 
-      const playerCount = data[playerId] || 0;
-      const total = data['_total'] || 1;
-      return Math.max(1, Math.min(99, Math.round((playerCount / total) * 100)));
+      return blendRarity(data, dateStr, cellKey, playerId);
     } catch (e) {
       return localRarity(dateStr, cellKey, playerId);
     }
@@ -133,11 +152,12 @@ const RarityService = (function() {
   }
 
   // Local fallback: estimate rarity based on player fame + pool size
+  // Higher % = more people would pick this player (common), lower % = more unique (rare)
   function localRarity(dateStr, cellKey, playerId) {
     const player = PLAYERS.find(p => p.id === playerId);
     if (!player) return 50;
 
-    // Fame score: more famous = higher rarity % (more people pick them)
+    // Fame score 0-100: more famous = more people pick them
     const totalSlams = player.grandSlams.ao + player.grandSlams.rg + player.grandSlams.w + player.grandSlams.uso;
     const fame = Math.min(100,
       totalSlams * 8 +
@@ -146,15 +166,23 @@ const RarityService = (function() {
       (player.careerWins > 500 ? 10 : 0)
     );
 
-    // Try to get valid answers count from grid context
-    let optionsFactor = 20; // default
+    // Pool size: more valid answers = each player is less likely to be picked
+    let poolSize = 20;
     if (_gridContext && _gridContext.validAnswers) {
       const [ri, ci] = cellKey.replace('r', '').split('c').map(Number);
       const validIds = _gridContext.validAnswers[ri]?.[ci];
-      if (validIds) optionsFactor = Math.max(1, validIds.length);
+      if (validIds) poolSize = Math.max(1, validIds.length);
     }
 
-    return Math.max(1, Math.min(99, Math.round(fame / optionsFactor * 3)));
+    // Estimate: what % of people would pick this player?
+    // With a large pool, even famous players have lower rarity
+    // Base: 1/poolSize is the "random chance" baseline
+    // Famous players get picked more, but scale reasonably
+    const baseChance = (1 / poolSize) * 100;
+    const fameMultiplier = 1 + (fame / 25); // 1x to 5x for fame
+    const rarity = Math.round(baseChance * fameMultiplier);
+
+    return Math.max(1, Math.min(99, rarity));
   }
 
   function isLive() {
