@@ -194,17 +194,17 @@
     let html = '';
     for (let i = 0; i < MAX_STRIKES; i++) {
       if (i < strikes) {
-        html += '<span class="strike-x used">X</span>';
+        html += '<span class="strike-dot used"></span>';
       } else {
-        html += '<span class="strike-x">X</span>';
+        html += '<span class="strike-dot"></span>';
       }
     }
     strikesEl.innerHTML = html;
 
-    // Update attempts count
+    // Update strikes count (shows strikes used, not remaining)
     const attemptsEl = document.getElementById('attempts-count');
     if (attemptsEl) {
-      attemptsEl.textContent = `${MAX_STRIKES - strikes} / ${MAX_STRIKES}`;
+      attemptsEl.textContent = `${strikes} / ${MAX_STRIKES}`;
     }
 
     const counterEl = document.getElementById('guess-counter');
@@ -229,6 +229,9 @@
     }
     const avg = Math.round(total / count);
     el.innerHTML = `<div class="corner-rarity-display"><span class="corner-rarity-value">${avg}%</span><span class="corner-rarity-label">Rarity</span></div>`;
+    // Also hide the subheader badge
+    const badge = document.getElementById('subheader-rarity');
+    if (badge) badge.style.display = 'none';
   }
 
   // ===== SEARCH MODAL =====

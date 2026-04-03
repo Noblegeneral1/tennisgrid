@@ -218,18 +218,20 @@ body {
   margin-top: 2px;
 }
 
-.strike-x {
-  width: 6px;
-  height: 6px;
+.strike-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.2);
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.35);
   font-size: 0;
   line-height: 0;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-.strike-x.used {
+.strike-dot.used {
   background: var(--red);
+  border-color: var(--red);
 }
 
 .strikes-container.low {
@@ -387,6 +389,35 @@ body {
   line-height: 1;
 }
 
+/* Subheader rarity badge */
+.subheader-rarity {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 2px auto 0;
+  padding: 3px 12px;
+  background: rgba(45, 106, 79, 0.07);
+  border: 1px solid rgba(45, 106, 79, 0.12);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.subheader-rarity-label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-light);
+}
+
+.subheader-rarity-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--green-dark);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Header cells */
 .header-cell {
   background: var(--green-dark);
@@ -486,29 +517,22 @@ body {
 }
 
 .player-photo {
-  width: 42px;
-  height: 42px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  object-fit: cover;
-  border: 2.5px solid rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.15);
-}
-
-.player-photo {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 2.5px solid rgba(255,255,255,0.5);
   object-fit: cover;
   object-position: center 20%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .player-avatar {
-  width: 42px;
-  height: 42px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  border: 2.5px solid rgba(255,255,255,0.5);
+  border: 3px solid rgba(255,255,255,0.7);
   background: rgba(255,255,255,0.12);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -520,11 +544,12 @@ body {
 }
 
 .player-name-cell {
-  font-size: 9px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 700;
   color: white;
   text-align: center;
   line-height: 1.2;
+  margin-top: 2px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -667,8 +692,8 @@ body {
 }
 
 .search-bar:focus-within {
-  border-color: var(--lime);
-  box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.2);
+  border-color: var(--green-dark);
+  box-shadow: 0 0 0 3px rgba(26, 67, 49, 0.15);
 }
 
 .search-icon { color: var(--text-light); flex-shrink: 0; }
@@ -712,13 +737,14 @@ body {
 .search-result-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 10px 16px;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .search-result-item:hover { background: var(--lime-muted); }
+.search-result-item:hover .search-avatar-wrap { filter: grayscale(0); }
 .search-result-item:active { background: rgba(163, 230, 53, 0.18); }
 
 .search-result-item + .search-result-item {
@@ -726,31 +752,35 @@ body {
 }
 
 .search-avatar-wrap {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   position: relative;
   border-radius: 50%;
   overflow: hidden;
   background: #1a4331;
+  filter: grayscale(40%);
+  transition: filter 0.2s ease;
+  border: 1.5px solid var(--border-light);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 
 .search-photo {
-  width: 36px;
-  height: 36px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
   object-position: center 20%;
 }
 
 .search-avatar-fallback {
-  width: 36px;
-  height: 36px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #fff;
   background: #1a4331;
@@ -764,8 +794,8 @@ body {
   gap: 6px;
 }
 
-.search-name { font-size: 14px; font-weight: 600; color: var(--text); }
-.search-flag { font-size: 15px; line-height: 1; }
+.search-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.search-flag { font-size: 16px; line-height: 1; }
 
 .no-results {
   padding: 32px 16px;
@@ -871,7 +901,7 @@ body {
 }
 
 .htp-section {
-  background: var(--green-lightest);
+  background: #f5f0eb;
   border-radius: var(--radius-sm);
   padding: 14px;
   margin-top: 12px;
@@ -917,23 +947,23 @@ body {
   list-style: none;
   font-size: 12px;
   color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .htp-clarifications li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   padding: 3px 0;
-  padding-left: 12px;
-  position: relative;
+  line-height: 1.45;
 }
 
-.htp-clarifications li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 10px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--green-medium);
+.htp-clarifications li strong {
+  flex: 0 0 110px;
+  min-width: 110px;
+  color: var(--green-dark);
 }
 
 /* ===== FOOTER ===== */
@@ -973,7 +1003,7 @@ body {
 
 .footer-info {
   font-size: 11px;
-  color: var(--text-light);
+  color: #78716c;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1023,9 +1053,12 @@ body {
 }
 
 .share-preview-card .share-grid-row {
+  font-family: 'Courier New', Courier, monospace;
   font-size: 22px;
-  line-height: 1.3;
-  letter-spacing: 2px;
+  line-height: 1.4;
+  letter-spacing: 4px;
+  display: block;
+  text-align: center;
 }
 
 .share-preview-card .share-url {
@@ -1082,17 +1115,17 @@ body {
   .cat-icon { width: 17px; height: 17px; }
   .header-label { font-size: 8px; }
   .cell-plus { font-size: 22px; }
-  .player-photo { width: 32px; height: 32px; }
-  .player-photo { width: 34px; height: 34px; }
-  .player-avatar { width: 34px; height: 34px; font-size: 13px; }
+  .player-photo { width: 40px; height: 40px; border-width: 2px; }
+  .player-avatar { width: 40px; height: 40px; font-size: 13px; border-width: 2px; }
   .player-name-cell { font-size: 8px; }
+  .search-avatar-wrap { width: 36px; height: 36px; }
   .grid-table { gap: 4px; }
   .icon-btn { width: 30px; height: 30px; }
   .icon-btn svg { width: 14px; height: 14px; }
   .strikes-container { padding: 4px 8px; min-width: 48px; }
   .attempts-label { font-size: 6px; }
   .attempts-count { font-size: 11px; }
-  .strike-x { width: 5px; height: 5px; }
+  .strike-dot { width: 5px; height: 5px; }
   .date-display, .grid-number { font-size: 10px; }
   .subheader-sep { font-size: 10px; }
 
@@ -1118,8 +1151,8 @@ body {
 
   .cell-plus { font-size: 38px; }
 
-  .player-photo { width: 52px; height: 52px; }
-  .player-avatar { width: 52px; height: 52px; font-size: 18px; }
+  .player-photo { width: 64px; height: 64px; }
+  .player-avatar { width: 64px; height: 64px; font-size: 18px; }
   .player-name-cell { font-size: 11px; }
   .rarity-badge { font-size: 10px; padding: 2px 6px; }
 
@@ -1128,7 +1161,7 @@ body {
 
   .strikes-container { padding: 6px 16px; min-width: 64px; }
   .attempts-count { font-size: 15px; }
-  .strike-x { width: 7px; height: 7px; }
+  .strike-dot { width: 7px; height: 7px; }
 
   .date-display, .grid-number { font-size: 12px; }
   .subheader-sep { font-size: 12px; }
@@ -1150,9 +1183,9 @@ body {
 
   .cell-plus { font-size: 42px; }
   .cell-answered { padding: 10px; gap: 5px; }
-  .player-photo { width: 58px; height: 58px; }
-  .player-avatar { width: 58px; height: 58px; font-size: 20px; }
-  .player-name-cell { font-size: 12px; }
+  .player-photo { width: 72px; height: 72px; }
+  .player-avatar { width: 72px; height: 72px; font-size: 20px; }
+  .player-name-cell { font-size: 13px; }
   .rarity-badge { font-size: 11px; padding: 3px 7px; top: 6px; right: 6px; }
 
   .date-display, .grid-number { font-size: 13px; }
@@ -1160,8 +1193,17 @@ body {
 
 /* ===== SCROLLBAR ===== */
 .search-results::-webkit-scrollbar,
-.archive-list::-webkit-scrollbar { width: 5px; }
+.archive-list::-webkit-scrollbar { width: 4px; }
 .search-results::-webkit-scrollbar-track,
 .archive-list::-webkit-scrollbar-track { background: transparent; }
 .search-results::-webkit-scrollbar-thumb,
-.archive-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.archive-list::-webkit-scrollbar-thumb { background: #c4b5a4; border-radius: 4px; }
+.search-results::-webkit-scrollbar-thumb:hover,
+.archive-list::-webkit-scrollbar-thumb:hover { background: #a89b8c; }
+
+/* Firefox scrollbar */
+.search-results,
+.archive-list {
+  scrollbar-width: thin;
+  scrollbar-color: #c4b5a4 transparent;
+}

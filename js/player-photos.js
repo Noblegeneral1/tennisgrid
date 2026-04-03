@@ -135,6 +135,7 @@ const PLAYER_PHOTOS = {
   "lleyton_hewitt": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Hewitt_WM16_%2812%29_%2828385918786%29.jpg/250px-Hewitt_WM16_%2812%29_%2828385918786%29.jpg",
   "lloyd_harris": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Lloyd_Harris_%282023_Cary%29_02.jpg/250px-Lloyd_Harris_%282023_Cary%29_02.jpg",
   "lorenzo_musetti": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Musetti_MCM23_%2811%29_%2852883593753%29.jpg/250px-Musetti_MCM23_%2811%29_%2852883593753%29.jpg",
+  "lorenzo_sonego": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Sonego_MCM22_%2822%29_%2852035355412%29.jpg/250px-Sonego_MCM22_%2822%29_%2852035355412%29.jpg",
   "luca_nardi": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Nardi_WMQ23_%2853061881614%29.jpg/250px-Nardi_WMQ23_%2853061881614%29.jpg",
   "lucas_pouille": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Pouille_WMQ23_%2853061116442%29.jpg/250px-Pouille_WMQ23_%2853061116442%29.jpg",
   "luciano_darderi": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Darderi_RGQ23_%2852944097003%29.jpg/250px-Darderi_RGQ23_%2852944097003%29.jpg",

@@ -32,12 +32,12 @@
       </div>
       <div class="header-right">
         <div id="guess-counter" class="strikes-container">
-          <span class="attempts-label">Attempts</span>
-          <span id="attempts-count" class="attempts-count">3 / 3</span>
+          <span class="attempts-label">Strikes</span>
+          <span id="attempts-count" class="attempts-count">0 / 3</span>
           <div id="strikes-display" class="strikes-display">
-            <span class="strike-x">X</span>
-            <span class="strike-x">X</span>
-            <span class="strike-x">X</span>
+            <span class="strike-dot"></span>
+            <span class="strike-dot"></span>
+            <span class="strike-dot"></span>
           </div>
         </div>
       </div>
@@ -46,6 +46,10 @@
       <span id="current-date-display" class="date-display">Today's Grid</span>
       <span class="subheader-sep">|</span>
       <span id="grid-number" class="grid-number"></span>
+    </div>
+    <div id="subheader-rarity" class="subheader-rarity" style="display:none">
+      <span class="subheader-rarity-label">Current Rarity</span>
+      <span id="subheader-rarity-value" class="subheader-rarity-value"></span>
     </div>
     <div id="rarity-mode" class="rarity-mode-badge" style="display:none"></div>
     <div id="countdown-timer" class="countdown-timer"></div>
@@ -138,13 +142,13 @@
         <div class="htp-section">
           <h3>Category Rules</h3>
           <ul class="htp-clarifications">
-            <li><strong>Grand Slams</strong> &mdash; Men's Singles titles only</li>
-            <li><strong>Former #1 / Year-End #1</strong> &mdash; ATP Singles ranking</li>
-            <li><strong>Davis Cup Champion</strong> &mdash; Won the Davis Cup representing their country (any role)</li>
-            <li><strong>ATP Finals</strong> &mdash; Won the year-end championship event (Singles)</li>
-            <li><strong>Olympic Gold</strong> &mdash; Singles gold medal at the Summer Olympics</li>
-            <li><strong>Nationality</strong> &mdash; Country the player represented on the ATP Tour</li>
-            <li><strong>Played in [decade]</strong> &mdash; Was active on the ATP Tour during that decade</li>
+            <li><strong>Grand Slams</strong><span>Men's Singles titles only</span></li>
+            <li><strong>Former #1 / Year-End #1</strong><span>ATP Singles ranking</span></li>
+            <li><strong>Davis Cup Champion</strong><span>Won the Davis Cup representing their country (any role)</span></li>
+            <li><strong>ATP Finals</strong><span>Won the year-end championship event (Singles)</span></li>
+            <li><strong>Olympic Gold</strong><span>Singles gold medal at the Summer Olympics</span></li>
+            <li><strong>Nationality</strong><span>Country the player represented on the ATP Tour</span></li>
+            <li><strong>Played in [decade]</strong><span>Was active on the ATP Tour during that decade</span></li>
           </ul>
         </div>
       </div>
