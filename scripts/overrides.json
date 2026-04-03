@@ -1,0 +1,39 @@
+{
+  "_comment": "Manual data corrections that can't be scraped. Player names must match exactly.",
+  "davis_cup_winners": [
+    "Roger Federer", "Rafael Nadal", "Novak Djokovic", "Andy Murray",
+    "Jannik Sinner", "Matteo Berrettini", "Lorenzo Sonego", "Lorenzo Musetti", "Flavio Cobolli",
+    "Lleyton Hewitt", "Pat Cash", "Mark Philippoussis", "John Newcombe", "Wally Masur", "Jason Stoltenberg",
+    "Pete Sampras", "Andre Agassi", "Andy Roddick", "James Blake", "Mardy Fish", "Bob Bryan", "Mike Bryan",
+    "John McEnroe", "Jim Courier", "Todd Martin", "Brad Gilbert", "MaliVai Washington",
+    "Boris Becker", "Michael Stich", "Carl-Uwe Steeb",
+    "Marat Safin", "Yevgeny Kafelnikov", "Mikhail Youzhny", "Daniil Medvedev", "Andrey Rublev", "Karen Khachanov", "Roman Safiullin",
+    "David Nalbandian", "Gaston Gaudio", "Guillermo Coria", "Juan Martin del Potro", "Leonardo Mayer", "Federico Delbonis", "Guido Pella",
+    "Marin Cilic", "Ivo Karlovic", "Borna Coric", "Goran Ivanisevic", "Ivan Dodig", "Borna Gojo",
+    "Juan Carlos Ferrero", "Carlos Moya", "Albert Costa", "Rafael Nadal", "David Ferrer",
+    "Roberto Bautista Agut", "Marcel Granollers", "Fernando Verdasco", "Feliciano Lopez", "Tommy Robredo",
+    "Sergi Bruguera", "Albert Ramos-Vinolas", "Pablo Carreno Busta",
+    "Yannick Noah", "Henri Leconte", "Jo-Wilfried Tsonga", "Richard Gasquet", "Gael Monfils",
+    "Gilles Simon", "Arnaud Clement", "Sebastien Grosjean", "Cedric Pioline", "Lucas Pouille",
+    "Nicolas Mahut", "Julien Benneteau", "Jeremy Chardy", "Benoit Paire", "Adrian Mannarino",
+    "Patrick Rafter", "Mark Edmondson", "Alex de Minaur",
+    "Gustavo Kuerten",
+    "Stefan Edberg", "Mats Wilander", "Jonas Bjorkman",
+    "Tomas Berdych", "Radek Stepanek", "Jiri Novak",
+    "Ilie Nastase",
+    "Stan Smith", "Arthur Ashe",
+    "Bjorn Borg",
+    "Petr Korda",
+    "Stanislas Wawrinka", "Marc Rosset", "Jakob Hlasek"
+  ],
+  "slam_corrections": {
+    "_comment": "For 2025 results not yet in the dataset",
+    "Carlos Alcaraz": {"ao": 1, "rg": 1, "w": 2, "uso": 1},
+    "Jannik Sinner": {"ao": 2, "rg": 0, "w": 0, "uso": 1}
+  },
+  "olympic_gold_winners": [
+    "Andre Agassi", "Yevgeny Kafelnikov", "Nicolas Massu", "Rafael Nadal",
+    "Andy Murray", "Alexander Zverev", "Novak Djokovic",
+    "Marc Rosset", "Miloslav Mecir", "Fernando Gonzalez"
+  ]
+}

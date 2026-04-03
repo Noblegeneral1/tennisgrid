@@ -246,6 +246,13 @@ const CATEGORIES = [
     check: (p) => p.country === "Romania"
   },
   {
+    id: "new_zealand",
+    label: "New Zealander",
+    shortLabel: "New Zealand",
+    type: "country",
+    check: (p) => p.country === "New Zealand"
+  },
+  {
     id: "poland",
     label: "Polish",
     shortLabel: "Poland",
@@ -316,7 +323,7 @@ const CATEGORIES = [
   {
     id: "no_titles",
     label: "Zero Career Singles Titles",
-    shortLabel: "0 Titles",
+    shortLabel: "0 Career Titles",
     icon: "\ud83d\ude45",
     type: "stat",
     check: (p) => p.titles === 0
@@ -324,7 +331,7 @@ const CATEGORIES = [
   {
     id: "titles_20plus",
     label: "Won 20+ Career Titles",
-    shortLabel: "20+ Titles",
+    shortLabel: "20+ Career Titles",
     icon: "\ud83c\udfc5",
     type: "stat",
     check: (p) => p.titles >= 20
@@ -332,7 +339,7 @@ const CATEGORIES = [
   {
     id: "titles_10plus",
     label: "Won 10+ Career Titles",
-    shortLabel: "10+ Titles",
+    shortLabel: "10+ Career Titles",
     icon: "\ud83c\udfc5",
     type: "stat",
     check: (p) => p.titles >= 10
@@ -340,7 +347,7 @@ const CATEGORIES = [
   {
     id: "titles_5plus",
     label: "Won 5+ Career Titles",
-    shortLabel: "5+ Titles",
+    shortLabel: "5+ Career Titles",
     icon: "\ud83c\udfc5",
     type: "stat",
     check: (p) => p.titles >= 5
@@ -348,7 +355,7 @@ const CATEGORIES = [
   {
     id: "wins_500plus",
     label: "500+ Career Match Wins",
-    shortLabel: "500+ Wins",
+    shortLabel: "500+ Career Wins",
     icon: "\u2705",
     type: "stat",
     check: (p) => p.careerWins >= 500
@@ -356,7 +363,7 @@ const CATEGORIES = [
   {
     id: "wins_300plus",
     label: "300+ Career Match Wins",
-    shortLabel: "300+ Wins",
+    shortLabel: "300+ Career Wins",
     icon: "\u2705",
     type: "stat",
     check: (p) => p.careerWins >= 300
@@ -364,7 +371,7 @@ const CATEGORIES = [
   {
     id: "prize_10m",
     label: "$10M+ Prize Money in One Season",
-    shortLabel: "$10M+ Season",
+    shortLabel: "$10M+ in 1 Season",
     icon: "\ud83d\udcb0",
     type: "stat",
     check: (p) => p.bestPrizeMoneySeason >= 10000000
@@ -372,7 +379,7 @@ const CATEGORIES = [
   {
     id: "prize_5m",
     label: "$5M+ Prize Money in One Season",
-    shortLabel: "$5M+ Season",
+    shortLabel: "$5M+ in 1 Season",
     icon: "\ud83d\udcb0",
     type: "stat",
     check: (p) => p.bestPrizeMoneySeason >= 5000000
@@ -380,18 +387,10 @@ const CATEGORIES = [
   {
     id: "prize_1m",
     label: "$1M+ Prize Money in One Season",
-    shortLabel: "$1M+ Season",
+    shortLabel: "$1M+ in 1 Season",
     icon: "\ud83d\udcb0",
     type: "stat",
     check: (p) => p.bestPrizeMoneySeason >= 1000000
-  },
-  {
-    id: "first_serve_80",
-    label: "80%+ First Serve Points Won (Career)",
-    shortLabel: "80%+ 1st Serve",
-    icon: "\ud83d\udca8",
-    type: "stat",
-    check: (p) => p.firstServeWinPct80
   },
   {
     id: "left_handed",
@@ -472,7 +471,7 @@ const CATEGORIES = [
   {
     id: "peaked_top3",
     label: "Career-High Top 3",
-    shortLabel: "Top 3 Peak",
+    shortLabel: "Career High Top 3",
     icon: "\ud83d\udcca",
     type: "achievement",
     check: (p) => p.peakRanking <= 3
@@ -480,7 +479,7 @@ const CATEGORIES = [
   {
     id: "peaked_top5",
     label: "Career-High Top 5",
-    shortLabel: "Top 5 Peak",
+    shortLabel: "Career High Top 5",
     icon: "\ud83d\udcca",
     type: "achievement",
     check: (p) => p.peakRanking <= 5
@@ -488,7 +487,7 @@ const CATEGORIES = [
   {
     id: "peaked_top10",
     label: "Career-High Top 10",
-    shortLabel: "Top 10 Peak",
+    shortLabel: "Career High Top 10",
     icon: "\ud83d\udcca",
     type: "achievement",
     check: (p) => p.peakRanking <= 10
@@ -496,7 +495,7 @@ const CATEGORIES = [
   {
     id: "peaked_top20",
     label: "Career-High Top 20",
-    shortLabel: "Top 20 Peak",
+    shortLabel: "Career High Top 20",
     icon: "\ud83d\udcca",
     type: "achievement",
     check: (p) => p.peakRanking <= 20
@@ -520,7 +519,7 @@ const CATEGORIES = [
   {
     id: "peaked_outside50",
     label: "Career-High Outside Top 50",
-    shortLabel: "Never Top 50",
+    shortLabel: "Career High Below 50",
     icon: "\ud83d\udcca",
     type: "stat",
     check: (p) => p.peakRanking > 50
@@ -577,6 +576,80 @@ const CATEGORIES = [
     icon: "\ud83c\udf0f",
     type: "country",
     check: (p) => !["Spain","France","Germany","Italy","Switzerland","Sweden","United Kingdom","Serbia","Croatia","Czech Republic","Austria","Netherlands","Belgium","Romania","Norway","Denmark","Greece","Bulgaria","Finland","Poland","Latvia","Slovenia","Slovakia","Hungary","Ukraine","Belarus","Moldova","Estonia","Portugal","Bosnia and Herzegovina","Georgia","Turkey"].includes(p.country)
+  },
+
+  // ===== ELITE CATEGORIES (derived from scrapable data) =====
+  {
+    id: "career_grand_slam",
+    label: "Career Grand Slam (Won All 4)",
+    shortLabel: "Career Slam",
+    type: "achievement",
+    check: (p) => p.grandSlams.ao > 0 && p.grandSlams.rg > 0 && p.grandSlams.w > 0 && p.grandSlams.uso > 0
+  },
+  {
+    id: "masters_1000_champ",
+    label: "Won a Masters 1000 Title",
+    shortLabel: "Won a Masters 1000",
+    type: "achievement",
+    check: (p) => p.masters1000 > 0
+  },
+  {
+    id: "masters_5plus",
+    label: "5+ Masters 1000 Titles",
+    shortLabel: "5+ Masters 1000s",
+    type: "achievement",
+    check: (p) => p.masters1000 >= 5
+  },
+  {
+    id: "masters_10plus",
+    label: "10+ Masters 1000 Titles",
+    shortLabel: "10+ Masters 1000s",
+    type: "achievement",
+    check: (p) => p.masters1000 >= 10
+  },
+  {
+    id: "weeks_no1_100",
+    label: "100+ Weeks at World #1",
+    shortLabel: "100+ Wks at #1",
+    type: "achievement",
+    check: (p) => p.weeksAtNo1 >= 100
+  },
+
+  // ===== FUN UNDERDOG / "LESS GOOD" CATEGORIES =====
+  {
+    id: "sub_100_wins",
+    label: "Fewer Than 100 Career Wins",
+    shortLabel: "< 100 Career Wins",
+    type: "stat",
+    check: (p) => p.careerWins > 0 && p.careerWins < 100
+  },
+  {
+    id: "sub_50_wins",
+    label: "Fewer Than 50 Career Wins",
+    shortLabel: "< 50 Career Wins",
+    type: "stat",
+    check: (p) => p.careerWins > 0 && p.careerWins < 50
+  },
+  {
+    id: "one_title_wonder",
+    label: "Exactly One Career Title",
+    shortLabel: "Only 1 Career Title",
+    type: "stat",
+    check: (p) => p.titles === 1
+  },
+  {
+    id: "no_masters",
+    label: "Never Won a Masters 1000",
+    shortLabel: "No Masters 1000 Title",
+    type: "stat",
+    check: (p) => p.masters1000 === 0
+  },
+  {
+    id: "no_slam_no_masters",
+    label: "No Slam and No Masters Title",
+    shortLabel: "No Slam/M1000",
+    type: "stat",
+    check: (p) => (p.grandSlams.ao + p.grandSlams.rg + p.grandSlams.w + p.grandSlams.uso) === 0 && p.masters1000 === 0
   }
 ];
 

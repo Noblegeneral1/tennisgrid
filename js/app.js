@@ -15,14 +15,35 @@
   let currentView = 'today'; // 'today' or 'archive'
   let archiveDate = null;
 
+  let unsubscribeRarity = null;
+
   // ===== INITIALIZATION =====
   function init() {
     grid = generateDailyGrid();
+    RarityService.setGridContext(grid);
     renderGrid();
     updateStrikesDisplay();
     setupEventListeners();
     loadSavedState();
     renderArchiveList();
+
+    // Preload rarity data and listen for live updates
+    RarityService.preloadDate(grid.date).then(() => {
+      refreshRarityDisplay();
+    });
+    unsubscribeRarity = RarityService.listenForUpdates(grid.date, () => {
+      refreshRarityDisplay();
+    });
+
+    // Show rarity mode indicator
+    const rarityBadge = document.getElementById('rarity-mode');
+    if (rarityBadge) {
+      if (RarityService.isLive()) {
+        rarityBadge.textContent = 'LIVE RARITY';
+        rarityBadge.classList.add('live');
+        rarityBadge.style.display = '';
+      }
+    }
   }
 
   // ===== RENDER =====
@@ -39,7 +60,7 @@
 
     const corner = document.createElement('div');
     corner.className = 'grid-cell corner-cell';
-    corner.innerHTML = '<div class="corner-logo"><span class="logo-atp">ATP</span><span class="logo-grid">GRID</span></div>';
+    corner.id = 'corner-rarity';
     headerRow.appendChild(corner);
 
     grid.cols.forEach((col) => {
@@ -103,17 +124,43 @@
     const player = PLAYERS.find(p => p.id === playerId);
     if (!player) return;
 
-    const rarity = rarityScores[cellKey] || calculateRarity(cellKey, playerId);
+    const rarity = rarityScores[cellKey] || 50;
     const rarityColor = getRarityColor(rarity);
+    const initials = getInitials(player.name);
 
     cell.className = 'grid-cell data-cell answered';
     cell.innerHTML = `
       <div class="cell-answered" style="background: ${rarityColor}">
-        <img class="player-photo" src="${player.photoUrl}" alt="${player.name}" onerror="this.style.display='none'">
+        <div class="player-avatar">${initials}</div>
         <div class="player-name-cell">${getShortName(player.name)}</div>
         <div class="rarity-badge">${rarity}%</div>
       </div>
     `;
+  }
+
+  function getInitials(name) {
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  // Refresh rarity display for all answered cells (called when live data updates)
+  async function refreshRarityDisplay() {
+    const dateStr = grid.date;
+    let updated = false;
+    for (const cellKey in answers) {
+      const playerId = answers[cellKey];
+      const rarity = await RarityService.getRarity(dateStr, cellKey, playerId);
+      if (rarityScores[cellKey] !== rarity) {
+        rarityScores[cellKey] = rarity;
+        updated = true;
+        // Update just this cell's display
+        const cellEl = document.querySelector(`[data-key="${cellKey}"]`);
+        if (cellEl) renderAnsweredCell(cellEl, playerId, cellKey);
+      }
+    }
+    if (updated) saveState();
   }
 
   function getShortName(name) {
@@ -122,29 +169,16 @@
     return parts[0][0] + '. ' + parts.slice(-1)[0];
   }
 
-  function calculateRarity(cellKey, playerId) {
-    const [ri, ci] = cellKey.replace('r', '').split('c').map(Number);
-    const validIds = grid.validAnswers[ri]?.[ci];
-    if (!validIds || validIds.length === 0) return 100;
-
-    const player = PLAYERS.find(p => p.id === playerId);
-    if (!player) return 50;
-
-    const totalSlams = player.grandSlams.ao + player.grandSlams.rg + player.grandSlams.w + player.grandSlams.uso;
-    const fame = Math.min(100, totalSlams * 8 + player.titles * 0.5 + (player.yearEndNo1 ? 15 : 0) + (player.careerWins > 500 ? 10 : 0));
-    const optionsFactor = Math.max(1, validIds.length);
-    const rarity = Math.max(1, Math.min(99, Math.round(fame / optionsFactor * 3)));
-
-    rarityScores[cellKey] = rarity;
-    return rarity;
-  }
+  // Rarity calculation is now handled by RarityService (js/rarity.js)
+  // Falls back to local estimation when Firebase is not configured
 
   function getRarityColor(rarity) {
-    if (rarity <= 10) return 'rgba(45, 106, 79, 0.95)';
-    if (rarity <= 25) return 'rgba(45, 106, 79, 0.75)';
-    if (rarity <= 50) return 'rgba(82, 183, 136, 0.7)';
-    if (rarity <= 75) return 'rgba(244, 162, 97, 0.7)';
-    return 'rgba(231, 111, 81, 0.75)';
+    // Muted green palette - darker = rarer
+    if (rarity <= 10) return '#2d5e45';
+    if (rarity <= 25) return '#3b7156';
+    if (rarity <= 50) return '#4a8b6a';
+    if (rarity <= 75) return '#6a9e80';
+    return '#8ab59a';
   }
 
   // ===== STRIKES DISPLAY =====
@@ -161,12 +195,34 @@
     }
     strikesEl.innerHTML = html;
 
+    // Update attempts count
+    const attemptsEl = document.getElementById('attempts-count');
+    if (attemptsEl) {
+      attemptsEl.textContent = `${MAX_STRIKES - strikes} / ${MAX_STRIKES}`;
+    }
+
     const counterEl = document.getElementById('guess-counter');
     if (strikes >= 2) {
       counterEl.classList.add('low');
     } else {
       counterEl.classList.remove('low');
     }
+  }
+
+  function updateCornerRarity() {
+    const el = document.getElementById('corner-rarity');
+    if (!el) return;
+    const count = Object.keys(rarityScores).length;
+    if (count === 0) {
+      el.innerHTML = '';
+      return;
+    }
+    let total = 0;
+    for (const key in rarityScores) {
+      total += rarityScores[key];
+    }
+    const avg = Math.round(total / count);
+    el.innerHTML = `<div class="corner-rarity-display"><span class="corner-rarity-value">${avg}%</span><span class="corner-rarity-label">Rarity</span></div>`;
   }
 
   // ===== SEARCH MODAL =====
@@ -180,9 +236,12 @@
 
     const rowCat = grid.rows[rowIdx];
     const colCat = grid.cols[colIdx];
+    // Count valid players for this cell
+    const validCount = grid.validAnswers[rowIdx]?.[colIdx]?.length || 0;
+
     headerInfo.innerHTML = `
       <span class="modal-cat">${getCategoryIcon(rowCat.id)} ${rowCat.shortLabel}</span>
-      <span class="modal-x">&times;</span>
+      <span class="modal-x">&amp;</span>
       <span class="modal-cat">${getCategoryIcon(colCat.id)} ${colCat.shortLabel}</span>
     `;
 
@@ -249,11 +308,14 @@
     display.forEach(player => {
       const item = document.createElement('div');
       item.className = 'search-result-item';
+      const initials = player.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
       item.innerHTML = `
-        <img class="search-photo" src="${player.photoUrl}" alt="" onerror="this.style.display='none'">
+        <div class="search-avatar-wrap">
+          <img class="search-photo" src="${player.photoUrl}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="search-avatar-fallback" style="display:none;">${initials}</span>
+        </div>
         <div class="search-info">
-          <div class="search-name">${player.name}</div>
-          <div class="search-country">${getCountryFlag(player.country)} ${player.country}</div>
+          <span class="search-name">${player.name}</span> <span class="search-flag">${getCountryFlag(player.country)}</span>
         </div>
       `;
       item.addEventListener('click', () => selectPlayer(player));
@@ -278,8 +340,19 @@
       answers[cellKey] = player.id;
       usedPlayers.add(player.id);
 
+      // Record selection to Firebase and get live rarity
+      RarityService.recordSelection(grid.date, cellKey, player.id).then(rarity => {
+        rarityScores[cellKey] = rarity;
+        // Re-render the cell with live rarity
+        const cellEl = document.querySelector(`[data-key="${cellKey}"]`);
+        if (cellEl) renderAnsweredCell(cellEl, player.id, cellKey);
+        updateCornerRarity();
+        saveState();
+      });
+
       closeSearchModal();
       renderGrid();
+      updateCornerRarity();
       saveState();
 
       // Check if grid is complete
@@ -375,8 +448,10 @@
   // ===== SHARE =====
   function buildShareText() {
     const totalCells = 9;
-    let shareText = `ATP Grid ${grid.date}\n`;
-    shareText += `${Object.keys(answers).length}/${totalCells} | Strikes: ${'X'.repeat(strikes)}${'_'.repeat(MAX_STRIKES - strikes)}\n\n`;
+    const gridNum = getGridNumber(grid.date);
+    const strikesStr = '\u274c'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    let shareText = `ATP Grid #${gridNum}\n`;
+    shareText += `Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}\n\n`;
 
     for (let r = 0; r < 3; r++) {
       let row = '';
@@ -399,63 +474,101 @@
     return shareText;
   }
 
+  function buildSharePreviewHTML() {
+    const totalCells = 9;
+    const gridNum = getGridNumber(grid.date);
+    const strikesStr = '\u274c'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+
+    let gridRows = '';
+    for (let r = 0; r < 3; r++) {
+      let row = '';
+      for (let c = 0; c < 3; c++) {
+        const key = `r${r}c${c}`;
+        if (answers[key]) {
+          const rarity = rarityScores[key] || 50;
+          if (rarity <= 10) row += '\ud83d\udfe2';
+          else if (rarity <= 25) row += '\ud83d\udfe9';
+          else if (rarity <= 50) row += '\ud83d\udfe8';
+          else if (rarity <= 75) row += '\ud83d\udfe7';
+          else row += '\ud83d\udfe5';
+        } else {
+          row += '\u2b1c';
+        }
+      }
+      gridRows += `<div class="share-grid-row">${row}</div>`;
+    }
+
+    return `
+      <div class="share-title">ATP Grid #${gridNum}</div>
+      <div class="share-score">Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}</div>
+      <div style="height:8px"></div>
+      ${gridRows}
+      <div style="height:8px"></div>
+      <div class="share-url">atpgrid.com</div>
+    `;
+  }
+
   function shareResults() {
     const text = buildShareText();
-
-    // Always show the share modal with the text + try clipboard
     const modal = document.getElementById('share-text-modal');
     const textarea = document.getElementById('share-text-area');
-    const status = document.getElementById('share-copy-status');
+    const previewCard = document.getElementById('share-preview-card');
+    const copyBtn = document.getElementById('share-copy-btn');
 
-    if (modal && textarea) {
-      textarea.value = text;
+    if (modal) {
+      if (textarea) textarea.value = text;
+      if (previewCard) previewCard.innerHTML = buildSharePreviewHTML();
       modal.classList.add('active');
-
-      // Try to auto-copy to clipboard
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-          if (status) {
-            status.textContent = 'Copied to clipboard!';
-            status.className = 'share-status success';
-          }
-        }).catch(() => {
-          tryExecCopy(textarea, status);
-        });
-      } else {
-        tryExecCopy(textarea, status);
-      }
     }
   }
 
-  function tryExecCopy(textarea, status) {
-    textarea.focus();
-    textarea.select();
-    try {
-      const ok = document.execCommand('copy');
-      if (ok && status) {
-        status.textContent = 'Copied to clipboard!';
-        status.className = 'share-status success';
-      } else if (status) {
-        status.textContent = 'Select all and copy manually';
-        status.className = 'share-status manual';
-      }
-    } catch (e) {
-      if (status) {
-        status.textContent = 'Select all and copy manually';
-        status.className = 'share-status manual';
-      }
+  function copyShareText() {
+    const text = buildShareText();
+    const copyBtn = document.getElementById('share-copy-btn');
+    const textarea = document.getElementById('share-text-area');
+
+    function showCopied() {
+      if (!copyBtn) return;
+      copyBtn.classList.add('copied');
+      copyBtn.querySelector('.share-copy-label').textContent = 'Copied!';
+      copyBtn.querySelector('.share-copy-icon').innerHTML = '<polyline points="20 6 9 17 4 12"/>';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.querySelector('.share-copy-label').textContent = 'Copy to Clipboard';
+        copyBtn.querySelector('.share-copy-icon').innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>';
+      }, 2000);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(showCopied).catch(() => {
+        if (textarea) {
+          textarea.style.display = 'block';
+          textarea.focus();
+          textarea.select();
+          try { document.execCommand('copy'); showCopied(); } catch(e) {}
+          textarea.style.display = 'none';
+        }
+      });
+    } else if (textarea) {
+      textarea.style.display = 'block';
+      textarea.focus();
+      textarea.select();
+      try { document.execCommand('copy'); showCopied(); } catch(e) {}
+      textarea.style.display = 'none';
     }
   }
 
   // ===== ARCHIVE =====
   function getArchiveDates() {
-    // Generate dates going back 30 days (today + 29 previous days)
+    // Generate all dates from Grid #1 (March 3, 2026) to today
     const dates = [];
     const today = new Date();
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
+    const todayStr = today.toISOString().split('T')[0];
+    const launch = new Date('2026-03-03T12:00:00');
+    const d = new Date(today);
+    while (d >= launch) {
       dates.push(d.toISOString().split('T')[0]);
+      d.setDate(d.getDate() - 1);
     }
     return dates;
   }
@@ -481,6 +594,7 @@
       const dateObj = new Date(dateStr + 'T12:00:00');
       const dayName = idx === 0 ? 'Today' : idx === 1 ? 'Yesterday' : dateObj.toLocaleDateString('en-US', { weekday: 'short' });
       const dateLabel = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const gridNum = getGridNumber(dateStr);
 
       let statusIcon = '';
       if (completed && answeredCount === 9) statusIcon = '<span class="archive-status complete">9/9</span>';
@@ -491,6 +605,7 @@
         <div class="archive-date-info">
           <span class="archive-day">${dayName}</span>
           <span class="archive-date">${dateLabel}</span>
+          <span class="archive-grid-num">#${gridNum}</span>
         </div>
         ${statusIcon}
       `;
@@ -510,6 +625,7 @@
 
     // Generate grid for this date
     grid = generateDailyGrid(dateStr);
+    RarityService.setGridContext(grid);
 
     // Reset state
     answers = {};
@@ -530,14 +646,29 @@
 
     renderGrid();
     updateStrikesDisplay();
+    updateCornerRarity();
     updateDateDisplay(dateStr);
 
-    // Close archive panel on mobile
+    // Close archive panel
     document.getElementById('archive-panel')?.classList.remove('open');
+    document.getElementById('archive-backdrop')?.classList.remove('visible');
+
+    // Preload rarity for this date and listen for updates
+    if (unsubscribeRarity) unsubscribeRarity();
+    RarityService.preloadDate(dateStr).then(() => refreshRarityDisplay());
+    unsubscribeRarity = RarityService.listenForUpdates(dateStr, () => refreshRarityDisplay());
 
     if (gameOver) {
       endGame(Object.keys(answers).length >= 9);
     }
+  }
+
+  // Grid number: days since launch (March 3, 2026 = Grid #1)
+  function getGridNumber(dateStr) {
+    const launch = new Date('2026-03-03T00:00:00');
+    const current = new Date(dateStr + 'T00:00:00');
+    const diff = Math.floor((current - launch) / (1000 * 60 * 60 * 24));
+    return Math.max(1, diff + 1);
   }
 
   function updateDateDisplay(dateStr) {
@@ -549,6 +680,40 @@
     } else {
       const d = new Date(dateStr + 'T12:00:00');
       el.textContent = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    // Grid number
+    const numEl = document.getElementById('grid-number');
+    if (numEl) {
+      numEl.textContent = `ATP Grid #${getGridNumber(dateStr)}`;
+    }
+
+    // Countdown timer (only show when game is complete)
+    updateCountdown();
+  }
+
+  let countdownInterval = null;
+  function updateCountdown() {
+    const timerEl = document.getElementById('countdown-timer');
+    if (!timerEl) return;
+
+    if (gameOver) {
+      timerEl.classList.add('visible');
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        const diff = tomorrow - now;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        timerEl.textContent = `Next grid in ${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }, 1000);
+    } else {
+      timerEl.classList.remove('visible');
+      if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
     }
   }
 
@@ -588,6 +753,7 @@
 
       renderGrid();
       updateStrikesDisplay();
+      updateCornerRarity();
 
       if (gameOver) {
         endGame(Object.keys(answers).length >= 9);
@@ -617,6 +783,7 @@
     document.getElementById('close-search').addEventListener('click', closeSearchModal);
     document.getElementById('share-btn').addEventListener('click', shareResults);
     document.getElementById('share-btn-footer')?.addEventListener('click', shareResults);
+    document.getElementById('share-copy-btn')?.addEventListener('click', copyShareText);
 
     // Share text modal close
     document.getElementById('share-text-modal')?.addEventListener('click', (e) => {
@@ -645,14 +812,22 @@
       }
     });
 
-    // Archive toggle
+    // Archive toggle with backdrop
+    function openArchive() {
+      document.getElementById('archive-panel').classList.add('open');
+      document.getElementById('archive-backdrop').classList.add('visible');
+    }
+    function closeArchive() {
+      document.getElementById('archive-panel').classList.remove('open');
+      document.getElementById('archive-backdrop').classList.remove('visible');
+    }
     document.getElementById('archive-btn')?.addEventListener('click', () => {
       const panel = document.getElementById('archive-panel');
-      panel.classList.toggle('open');
+      if (panel.classList.contains('open')) closeArchive();
+      else openArchive();
     });
-    document.getElementById('close-archive')?.addEventListener('click', () => {
-      document.getElementById('archive-panel').classList.remove('open');
-    });
+    document.getElementById('close-archive')?.addEventListener('click', closeArchive);
+    document.getElementById('archive-backdrop')?.addEventListener('click', closeArchive);
   }
 
   // ===== BOOT =====

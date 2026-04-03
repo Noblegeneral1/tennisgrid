@@ -38,7 +38,7 @@ const ALL_CANDIDATE_IDS = [
   "usa", "spain", "france", "germany", "australia", "argentina",
   "sweden", "uk", "russia", "italy", "czech", "croatia", "switzerland",
   "serbia", "chile", "netherlands", "canada", "austria", "brazil",
-  "belgium", "south_africa", "japan", "romania", "poland",
+  "belgium", "south_africa", "japan", "romania", "poland", "new_zealand",
   // Regional
   "south_american", "european", "non_european",
   // Eras
@@ -55,9 +55,14 @@ const ALL_CANDIDATE_IDS = [
   "prize_10m", "prize_5m", "prize_1m",
   "first_serve_80", "left_handed",
   "active", "retired",
-  // Fun
+  // Fun - elite
   "one_slam_wonder", "clay_specialist", "grass_specialist",
-  "never_top10", "never_top20", "peaked_outside50"
+  "career_grand_slam",
+  "masters_1000_champ", "masters_5plus", "masters_10plus", "weeks_no1_100",
+  // Fun - underdog
+  "never_top10", "never_top20", "peaked_outside50",
+  "sub_100_wins", "sub_50_wins", "one_title_wonder",
+  "no_masters", "no_slam_no_masters"
 ];
 
 // Pairs of categories that conflict / are contradictory / too overlapping
@@ -72,7 +77,7 @@ const CONFLICTS = [
   ["european", "russia"],
   ["non_european", "usa"], ["non_european", "australia"], ["non_european", "argentina"],
   ["non_european", "chile"], ["non_european", "brazil"], ["non_european", "japan"],
-  ["non_european", "south_africa"], ["non_european", "canada"],
+  ["non_european", "south_africa"], ["non_european", "canada"], ["non_european", "new_zealand"],
   // Non-european conflicts with european countries (impossible intersection)
   ["non_european", "spain"], ["non_european", "france"], ["non_european", "germany"],
   ["non_european", "italy"], ["non_european", "uk"], ["non_european", "sweden"],
@@ -83,14 +88,14 @@ const CONFLICTS = [
   // European conflicts with non-european countries (impossible intersection)
   ["european", "usa"], ["european", "australia"], ["european", "argentina"],
   ["european", "chile"], ["european", "brazil"], ["european", "japan"],
-  ["european", "south_africa"], ["european", "canada"],
+  ["european", "south_africa"], ["european", "canada"], ["european", "new_zealand"],
   // South American vs non-SA countries
   ["south_american", "usa"], ["south_american", "spain"], ["south_american", "france"],
   ["south_american", "germany"], ["south_american", "australia"], ["south_american", "uk"],
   ["south_american", "russia"], ["south_american", "italy"], ["south_american", "serbia"],
   ["south_american", "czech"], ["south_american", "croatia"], ["south_american", "switzerland"],
   ["south_american", "sweden"], ["south_american", "japan"], ["south_american", "canada"],
-  ["south_american", "south_africa"], ["south_american", "netherlands"],
+  ["south_american", "south_africa"], ["south_american", "new_zealand"], ["south_american", "netherlands"],
   ["south_american", "belgium"], ["south_american", "romania"], ["south_american", "poland"],
   ["south_american", "austria"],
   // Direct contradictions
@@ -164,11 +169,83 @@ const CONFLICTS = [
   ["w_champ", "one_slam_wonder"], ["uso_champ", "one_slam_wonder"],
   // Clay/grass specialist + slam they won is redundant
   ["clay_specialist", "rg_champ"], ["grass_specialist", "w_champ"],
+
+  // ===== REMAINING CATEGORY CONFLICTS =====
+  // Career grand slam overlaps
+  ["career_grand_slam", "ao_champ"], ["career_grand_slam", "rg_champ"],
+  ["career_grand_slam", "w_champ"], ["career_grand_slam", "uso_champ"],
+  ["career_grand_slam", "gs_champ"], ["career_grand_slam", "multi_gs"],
+  ["career_grand_slam", "one_slam_wonder"],
+  // Masters subsets
+  ["masters_1000_champ", "masters_5plus"], ["masters_1000_champ", "masters_10plus"],
+  ["masters_5plus", "masters_10plus"],
+  // Weeks at #1 implies peaked #1
+  ["weeks_no1_100", "peaked_no1"], ["weeks_no1_100", "year_end_no1"],
+  // Underdog conflicts with elite
+  ["sub_100_wins", "wins_300plus"], ["sub_100_wins", "wins_500plus"],
+  ["sub_50_wins", "wins_300plus"], ["sub_50_wins", "wins_500plus"],
+  ["sub_50_wins", "sub_100_wins"],
+  ["sub_100_wins", "titles_10plus"], ["sub_100_wins", "titles_20plus"],
+  ["sub_50_wins", "titles_5plus"], ["sub_50_wins", "titles_10plus"], ["sub_50_wins", "titles_20plus"],
+  ["one_title_wonder", "no_titles"], ["one_title_wonder", "titles_5plus"],
+  ["one_title_wonder", "titles_10plus"], ["one_title_wonder", "titles_20plus"],
+  ["no_masters", "masters_1000_champ"], ["no_masters", "masters_5plus"], ["no_masters", "masters_10plus"],
+  ["no_slam_no_masters", "gs_champ"], ["no_slam_no_masters", "multi_gs"],
+  ["no_slam_no_masters", "masters_1000_champ"], ["no_slam_no_masters", "masters_5plus"],
+  ["no_slam_no_masters", "ao_champ"], ["no_slam_no_masters", "rg_champ"],
+  ["no_slam_no_masters", "w_champ"], ["no_slam_no_masters", "uso_champ"],
+  ["no_slam_no_masters", "no_gs"], ["no_slam_no_masters", "no_masters"],
+  ["no_slam_no_masters", "no_titles"],
+  // Underdog + underdog is boring
+  ["sub_100_wins", "no_titles"], ["sub_50_wins", "no_titles"],
+  ["sub_100_wins", "peaked_outside50"], ["sub_50_wins", "peaked_outside50"],
+  ["sub_100_wins", "never_top20"], ["sub_50_wins", "never_top20"],
 ];
 
 // Check if two category IDs conflict
 function categoriesConflict(id1, id2) {
   return CONFLICTS.some(([a, b]) => (a === id1 && b === id2) || (a === id2 && b === id1));
+}
+
+// Cache for subset checks (computed once on load)
+let _subsetCache = null;
+function buildSubsetCache() {
+  if (_subsetCache) return _subsetCache;
+  _subsetCache = new Set();
+  const cats = CATEGORIES;
+  // Pre-compute which players match each category
+  const catPlayers = {};
+  for (const cat of cats) {
+    catPlayers[cat.id] = new Set(PLAYERS.filter(p => cat.check(p)).map(p => p.id));
+  }
+  for (let i = 0; i < cats.length; i++) {
+    const a = cats[i];
+    const setA = catPlayers[a.id];
+    if (setA.size < 3) continue;
+    for (let j = i + 1; j < cats.length; j++) {
+      const b = cats[j];
+      const setB = catPlayers[b.id];
+      if (setB.size < 3) continue;
+      // Count overlap
+      let overlap = 0;
+      for (const id of setA) { if (setB.has(id)) overlap++; }
+      const aSubsetPct = overlap / setA.size;
+      const bSubsetPct = overlap / setB.size;
+      // If either is 90%+ subset of the other, mark as conflicting
+      if (aSubsetPct >= 0.9 || bSubsetPct >= 0.9) {
+        _subsetCache.add(`${a.id}|${b.id}`);
+        _subsetCache.add(`${b.id}|${a.id}`);
+      }
+    }
+  }
+  return _subsetCache;
+}
+
+// Combined conflict check: explicit rules OR dynamic subset detection
+function fullConflictCheck(id1, id2) {
+  if (categoriesConflict(id1, id2)) return true;
+  const cache = buildSubsetCache();
+  return cache.has(`${id1}|${id2}`);
 }
 
 // Generate the daily grid
@@ -199,8 +276,8 @@ function generateDailyGrid(dateStr) {
       if (!cat) continue;
       if (picked.find(c => c.id === id)) continue;
 
-      // Check for conflicts with ALL already-picked categories
-      const hasConflict = picked.some(existing => categoriesConflict(id, existing.id));
+      // Check for conflicts with ALL already-picked categories (explicit + subset)
+      const hasConflict = picked.some(existing => fullConflictCheck(id, existing.id));
       if (hasConflict) continue;
 
       // For variety, avoid too many of the same type per axis
@@ -220,12 +297,12 @@ function generateDailyGrid(dateStr) {
     const rowCats = picked.slice(0, 3);
     const colCats = picked.slice(3, 6);
 
-    // Validate: every cell must have at least 2 valid players (for interesting gameplay)
+    // Validate: every cell must have at least 5 valid players
     let valid = true;
     for (const rowCat of rowCats) {
       for (const colCat of colCats) {
         const matches = getPlayersForIntersection(rowCat, colCat);
-        if (matches.length < 2) {
+        if (matches.length < 5) {
           valid = false;
           break;
         }
