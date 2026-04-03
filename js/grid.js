@@ -62,7 +62,11 @@ const ALL_CANDIDATE_IDS = [
   // Fun - underdog
   "never_top10", "never_top20", "peaked_outside50",
   "sub_100_wins", "sub_50_wins", "one_title_wonder",
-  "no_masters", "no_slam_no_masters"
+  "no_masters", "no_slam_no_masters",
+  // Height / Surface / Age / Career
+  "tall_player", "short_player", "clay_100_wins", "hard_100_wins",
+  "grass_50_wins", "clay_200_wins", "young_first_title", "title_after_30",
+  "long_career", "big_server"
 ];
 
 // Pairs of categories that conflict / are contradictory / too overlapping
@@ -200,6 +204,11 @@ const CONFLICTS = [
   ["sub_100_wins", "no_titles"], ["sub_50_wins", "no_titles"],
   ["sub_100_wins", "peaked_outside50"], ["sub_50_wins", "peaked_outside50"],
   ["sub_100_wins", "never_top20"], ["sub_50_wins", "never_top20"],
+  // Height / Surface / Age conflicts
+  ["tall_player", "short_player"],
+  ["clay_100_wins", "clay_200_wins"],
+  ["no_titles", "young_first_title"],
+  ["no_titles", "title_after_30"],
 ];
 
 // Check if two category IDs conflict

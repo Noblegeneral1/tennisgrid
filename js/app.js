@@ -128,10 +128,16 @@
     const rarityColor = getRarityColor(rarity);
     const initials = getInitials(player.name);
 
+    const hasPhoto = typeof PLAYER_PHOTOS !== 'undefined' && PLAYER_PHOTOS[playerId];
+    const photoUrl = hasPhoto ? PLAYER_PHOTOS[playerId] : '';
+
     cell.className = 'grid-cell data-cell answered';
     cell.innerHTML = `
       <div class="cell-answered" style="background: ${rarityColor}">
-        <div class="player-avatar">${initials}</div>
+        ${photoUrl
+          ? `<img class="player-photo" src="${photoUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          : ''}
+        <div class="player-avatar" ${photoUrl ? 'style="display:none"' : ''}>${initials}</div>
         <div class="player-name-cell">${getShortName(player.name)}</div>
         <div class="rarity-badge">${rarity}%</div>
       </div>

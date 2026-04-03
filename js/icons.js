@@ -68,6 +68,18 @@ const ICONS = {
 
   grass: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l2-8"/><path d="M8 20l1-12"/><path d="M12 20V6"/><path d="M16 20l-1-12"/><path d="M20 20l-2-8"/><line x1="2" y1="20" x2="22" y2="20"/></svg>`,
 
+  // Height / Measuring
+  ruler: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3H3v18h18V3zM6 17v-2h3v2H6zm0-4v-2h5v2H6zm0-4V7h3v2H6z"/></svg>`,
+
+  // Fire / Surface wins
+  flame: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 23c-3.9 0-7-3.1-7-7 0-3.2 2.9-6.8 5.1-9.4L12 4.5l1.9 2.1C16.1 9.2 19 12.8 19 16c0 3.9-3.1 7-7 7z"/></svg>`,
+
+  // Time / Age
+  clock: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+
+  // Lightning bolt / Power
+  zap: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+
   // Davis Cup specific
   davisCup: `<svg class="cat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4a2 2 0 01-2-2V6a2 2 0 012-2h2"/><path d="M18 9h2a2 2 0 002-2V6a2 2 0 00-2-2h-2"/><path d="M6 4h12v6a6 6 0 01-12 0V4z"/><path d="M12 16v-2"/><path d="M8 20h8l-1-4h-6z"/></svg>`,
 };
@@ -150,6 +162,18 @@ const CATEGORY_ICONS = {
   one_title_wonder: ICONS.medal,
   no_masters: ICONS.slash,
   no_slam_no_masters: ICONS.slash,
+
+  // Height / Surface / Age / Career
+  tall_player: ICONS.ruler,
+  short_player: ICONS.ruler,
+  clay_100_wins: ICONS.flame,
+  hard_100_wins: ICONS.flame,
+  grass_50_wins: ICONS.flame,
+  clay_200_wins: ICONS.flame,
+  young_first_title: ICONS.clock,
+  title_after_30: ICONS.clock,
+  long_career: ICONS.clock,
+  big_server: ICONS.zap,
 };
 
 // Get SVG icon for a category (fallback to empty string)

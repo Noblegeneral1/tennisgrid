@@ -650,7 +650,19 @@ const CATEGORIES = [
     shortLabel: "No Slam/M1000",
     type: "stat",
     check: (p) => (p.grandSlams.ao + p.grandSlams.rg + p.grandSlams.w + p.grandSlams.uso) === 0 && p.masters1000 === 0
-  }
+  },
+
+  // ===== HEIGHT / SURFACE / AGE / CAREER STATS =====
+  { id: "tall_player", label: "Over 6'4\"", shortLabel: "Tall", type: "stat", icon: "ruler", check: p => p.heightCm >= 193 },
+  { id: "short_player", label: "Under 5'10\"", shortLabel: "Short", type: "stat", icon: "ruler", check: p => p.heightCm > 0 && p.heightCm < 178 },
+  { id: "clay_100_wins", label: "100+ Clay Wins", shortLabel: "Clay 100", type: "stat", icon: "flame", check: p => p.clayWins >= 100 },
+  { id: "hard_100_wins", label: "100+ Hard Court Wins", shortLabel: "Hard 100", type: "stat", icon: "flame", check: p => p.hardWins >= 100 },
+  { id: "grass_50_wins", label: "50+ Grass Wins", shortLabel: "Grass 50", type: "stat", icon: "flame", check: p => p.grassWins >= 50 },
+  { id: "clay_200_wins", label: "200+ Clay Wins", shortLabel: "Clay 200", type: "stat", icon: "flame", check: p => p.clayWins >= 200 },
+  { id: "young_first_title", label: "First Title Under 21", shortLabel: "Young Champ", type: "stat", icon: "clock", check: p => p.ageFirstTitle > 0 && p.ageFirstTitle < 21 },
+  { id: "title_after_30", label: "Won Title After 30", shortLabel: "Late Bloomer", type: "stat", icon: "clock", check: p => p.ageLastTitle >= 30 },
+  { id: "long_career", label: "15+ Year Career", shortLabel: "Long Career", type: "stat", icon: "clock", check: p => p.careerLength >= 15 },
+  { id: "big_server", label: "Big Server", shortLabel: "Big Server", type: "stat", icon: "zap", check: p => p.aceRate >= 10 },
 ];
 
 // Get a category by ID

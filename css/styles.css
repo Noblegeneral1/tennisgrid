@@ -494,6 +494,14 @@ body {
   background: rgba(255,255,255,0.15);
 }
 
+.player-photo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.5);
+  object-fit: cover;
+}
+
 .player-avatar {
   width: 42px;
   height: 42px;
@@ -1064,6 +1072,7 @@ body {
   .header-label { font-size: 8px; }
   .cell-plus { font-size: 22px; }
   .player-photo { width: 32px; height: 32px; }
+  .player-photo { width: 34px; height: 34px; }
   .player-avatar { width: 34px; height: 34px; font-size: 13px; }
   .player-name-cell { font-size: 8px; }
   .grid-table { gap: 4px; }
@@ -1098,6 +1107,7 @@ body {
 
   .cell-plus { font-size: 38px; }
 
+  .player-photo { width: 52px; height: 52px; }
   .player-avatar { width: 52px; height: 52px; font-size: 18px; }
   .player-name-cell { font-size: 11px; }
   .rarity-badge { font-size: 10px; padding: 2px 6px; }
@@ -1129,6 +1139,7 @@ body {
 
   .cell-plus { font-size: 42px; }
   .cell-answered { padding: 10px; gap: 5px; }
+  .player-photo { width: 58px; height: 58px; }
   .player-avatar { width: 58px; height: 58px; font-size: 20px; }
   .player-name-cell { font-size: 12px; }
   .rarity-badge { font-size: 11px; padding: 3px 7px; top: 6px; right: 6px; }

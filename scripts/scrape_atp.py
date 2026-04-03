@@ -84,11 +84,17 @@ def main():
         pid = row.get("player_id", "").strip()
         if not pid:
             continue
+        height_str = row.get("height", "").strip()
+        try:
+            height = int(float(height_str)) if height_str else 0
+        except (ValueError, TypeError):
+            height = 0
         player_lookup[pid] = {
             "name": f"{row.get('name_first', '').strip()} {row.get('name_last', '').strip()}".strip(),
             "ioc": row.get("ioc", "").strip(),
             "hand": row.get("hand", "R").strip() or "R",
             "dob": row.get("dob", "").strip(),
+            "height": height,
         }
     print(f"  Loaded {len(player_lookup)} player bios")
 
@@ -104,6 +110,12 @@ def main():
         "olympic_gold": False,
         "years_active": set(),
         "best_prize_season": 0,
+        "clay_wins": 0,
+        "hard_wins": 0,
+        "grass_wins": 0,
+        "total_aces": 0,
+        "total_svpt": 0,
+        "title_years": [],
     })
 
     match_years = list(range(1968, 2027))
@@ -151,10 +163,29 @@ def main():
             tourney_level = row.get("tourney_level", "").strip()
             tourney_name = row.get("tourney_name", "").strip()
             rnd = row.get("round", "").strip()
+            surface = row.get("surface", "").strip()
 
             # Count win
             stats[wid]["wins"] += 1
             stats[wid]["years_active"].add(year)
+
+            # Surface wins
+            if surface == "Clay":
+                stats[wid]["clay_wins"] += 1
+            elif surface == "Hard":
+                stats[wid]["hard_wins"] += 1
+            elif surface == "Grass":
+                stats[wid]["grass_wins"] += 1
+
+            # Serve stats (available ~1991+)
+            try:
+                aces = int(row.get("w_ace", "") or 0)
+                svpt = int(row.get("w_svpt", "") or 0)
+                if svpt > 0:
+                    stats[wid]["total_aces"] += aces
+                    stats[wid]["total_svpt"] += svpt
+            except (ValueError, TypeError):
+                pass
 
             # Also track loser's active years
             if lid:
@@ -163,6 +194,7 @@ def main():
             # Title = won the final
             if rnd == "F":
                 stats[wid]["titles"] += 1
+                stats[wid]["title_years"].append(year)
 
                 # Grand Slam finals
                 if tourney_level == "G":
@@ -263,6 +295,8 @@ def main():
             "masters": 0, "atp_finals": 0,
             "davis_cup": False, "olympic_gold": False,
             "years_active": set(), "best_prize_season": 0,
+            "clay_wins": 0, "hard_wins": 0, "grass_wins": 0,
+            "total_aces": 0, "total_svpt": 0, "title_years": [],
         })
 
         country = IOC_TO_COUNTRY.get(bio["ioc"], bio["ioc"])
@@ -295,6 +329,47 @@ def main():
             ext["m1000"] = s["masters"]
         if weeks_at_no1.get(pid, 0) > 0:
             ext["wks1"] = weeks_at_no1[pid]
+
+        # Height
+        height = bio.get("height", 0)
+        if height > 0:
+            ext["ht"] = height
+
+        # Surface wins
+        if s["clay_wins"] > 0:
+            ext["cw"] = s["clay_wins"]
+        if s["hard_wins"] > 0:
+            ext["hw"] = s["hard_wins"]
+        if s["grass_wins"] > 0:
+            ext["gw"] = s["grass_wins"]
+
+        # Ace rate (min 500 service points to avoid noise)
+        if s["total_svpt"] >= 500:
+            ace_rate = round(s["total_aces"] / s["total_svpt"] * 100, 1)
+            if ace_rate > 0:
+                ext["ar"] = ace_rate
+
+        # Age-based stats
+        dob = bio.get("dob", "")
+        birth_year = 0
+        if dob and len(dob) >= 4:
+            try:
+                birth_year = int(dob[:4])
+            except ValueError:
+                pass
+
+        if birth_year > 0 and s["title_years"]:
+            age_first_title = min(s["title_years"]) - birth_year
+            age_last_title = max(s["title_years"]) - birth_year
+            if age_first_title > 0:
+                ext["aft"] = age_first_title
+            if age_last_title > 0:
+                ext["alt"] = age_last_title
+
+        if years:
+            career_length = max(years) - min(years) + 1
+            if career_length > 1:
+                ext["cl"] = career_length
 
         player_entry = [
             bio["name"],
@@ -331,10 +406,13 @@ def main():
             existing[8] = sorted(existing_decades)
             # Take best (lowest) peak ranking
             existing[9] = min(existing[9], p[9])
-            # Merge extended attributes (take max)
+            # Merge extended attributes
             if len(existing) > 10 and len(p) > 10 and p[10]:
                 for k, v in p[10].items():
-                    existing[10][k] = max(existing[10].get(k, 0), v)
+                    if k == "aft":  # age at first title: take min
+                        existing[10][k] = min(existing[10].get(k, v), v)
+                    else:
+                        existing[10][k] = max(existing[10].get(k, 0), v)
             elif len(p) > 10 and p[10]:
                 if len(existing) <= 10:
                     existing.append(p[10])
@@ -430,6 +508,7 @@ def generate_js(player_data):
     lines.append("//")
     lines.append("// Compact format: [name, country, {ao,rg,w,uso}, titles, careerWins, bestPrizeSeason$, flags, hand, decades[], peakRanking, ext?]")
     lines.append("// flags bitmask: 1=yearEndNo1, 2=olympicGold, 4=davisCup, 8=atpFinals, 16=active")
+    lines.append("// ext keys: m1000=masters titles, wks1=weeks at #1, ht=height(cm), cw=clay wins, hw=hard wins, gw=grass wins, ar=ace rate, aft=age first title, alt=age last title, cl=career length")
     lines.append("")
     lines.append("const PLAYER_DATA = [")
 
@@ -502,6 +581,14 @@ const PLAYERS = uniquePlayerData.map((p, idx) => {
     peakRanking: p[9],
     masters1000: ext.m1000 || 0,
     weeksAtNo1: ext.wks1 || 0,
+    heightCm: ext.ht || 0,
+    clayWins: ext.cw || 0,
+    hardWins: ext.hw || 0,
+    grassWins: ext.gw || 0,
+    aceRate: ext.ar || 0,
+    ageFirstTitle: ext.aft || 0,
+    ageLastTitle: ext.alt || 0,
+    careerLength: ext.cl || 0,
     photoUrl: getPlayerPhotoUrl(p[0])
   };
 });
