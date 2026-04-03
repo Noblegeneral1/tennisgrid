@@ -85,9 +85,9 @@ body {
 }
 
 .header-logo-img {
-  height: 100px;
+  height: 150px;
   width: auto;
-  margin: -24px 0;
+  margin: -40px 0;
   display: block;
 }
 
@@ -500,6 +500,7 @@ body {
   border-radius: 50%;
   border: 2.5px solid rgba(255,255,255,0.5);
   object-fit: cover;
+  object-position: center 20%;
 }
 
 .player-avatar {
@@ -739,6 +740,7 @@ body {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
+  object-position: center 20%;
 }
 
 .search-avatar-fallback {
@@ -1076,7 +1078,7 @@ body {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
   .app-header { padding: 8px 10px 2px; }
-  .header-logo-img { height: 76px; margin: -18px 0; }
+  .header-logo-img { height: 114px; margin: -28px 0; }
   .cat-icon { width: 17px; height: 17px; }
   .header-label { font-size: 8px; }
   .cell-plus { font-size: 22px; }
@@ -1105,7 +1107,7 @@ body {
   .app-main { max-width: 640px; }
   .app-footer { max-width: 640px; }
 
-  .header-logo-img { height: 120px; margin: -30px 0; }
+  .header-logo-img { height: 180px; margin: -48px 0; }
 
   .grid-table { gap: 8px; }
   .grid-cell { border-radius: var(--radius); }
@@ -1138,7 +1140,7 @@ body {
   .app-main { max-width: 720px; }
   .app-footer { max-width: 720px; }
 
-  .header-logo-img { height: 140px; margin: -36px 0; }
+  .header-logo-img { height: 210px; margin: -56px 0; }
 
   .grid-table { gap: 10px; }
 

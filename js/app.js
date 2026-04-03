@@ -315,10 +315,14 @@
       const item = document.createElement('div');
       item.className = 'search-result-item';
       const initials = player.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+      const hasPhoto = typeof PLAYER_PHOTOS !== 'undefined' && PLAYER_PHOTOS[player.id];
+      const photoSrc = hasPhoto ? PLAYER_PHOTOS[player.id] : '';
       item.innerHTML = `
         <div class="search-avatar-wrap">
-          <img class="search-photo" src="${player.photoUrl}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <span class="search-avatar-fallback" style="display:none;">${initials}</span>
+          ${photoSrc
+            ? `<img class="search-photo" src="${photoSrc}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+            : '<span style="display:none;"></span>'}
+          <span class="search-avatar-fallback" ${photoSrc ? 'style="display:none;"' : ''}>${initials}</span>
         </div>
         <div class="search-info">
           <span class="search-name">${player.name}</span> <span class="search-flag">${getCountryFlag(player.country)}</span>

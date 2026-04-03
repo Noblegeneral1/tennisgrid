@@ -25,7 +25,7 @@ OUTPUT_JS = os.path.join(PROJECT_DIR, "js", "player-photos.js")
 
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 THUMB_SIZE = 200
-REQUEST_DELAY = 0.05  # 50ms between requests
+REQUEST_DELAY = 0.2  # 200ms between requests (Wikipedia rate limit)
 
 
 def parse_player_names(filepath):
@@ -155,9 +155,17 @@ def main():
     print(f"Cache: {cached_count} players already cached, {len(player_names) - cached_count} to fetch.\n")
 
     # Step 3: Fetch photos for uncached players
+    # Limit to first N players if --limit flag is passed
+    import sys
+    max_players = len(player_names)
+    for arg in sys.argv[1:]:
+        if arg.startswith("--limit="):
+            max_players = int(arg.split("=")[1])
+            print(f"Limiting to first {max_players} players.\n")
+
     fetched = 0
     errors = 0
-    for i, name in enumerate(player_names):
+    for i, name in enumerate(player_names[:max_players]):
         if name in cache:
             continue
 
@@ -182,7 +190,7 @@ def main():
         if total_processed % 100 == 0 and total_processed > 0:
             print(f"  Progress: {total_processed} players fetched "
                   f"({fetched - errors} ok, {errors} errors)... "
-                  f"[{i + 1}/{len(player_names)} total]")
+                  f"[{i + 1}/{max_players} total]")
 
         # Rate limit
         time.sleep(REQUEST_DELAY)
