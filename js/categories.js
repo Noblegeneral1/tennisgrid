@@ -567,7 +567,7 @@ const CATEGORIES = [
     shortLabel: "European",
     icon: "\ud83c\udf0d",
     type: "country",
-    check: (p) => ["Spain","France","Germany","Italy","Switzerland","Sweden","United Kingdom","Serbia","Croatia","Czech Republic","Austria","Netherlands","Belgium","Romania","Norway","Denmark","Greece","Bulgaria","Finland","Poland","Latvia","Slovenia","Slovakia","Hungary","Ukraine","Belarus","Moldova","Estonia","Portugal","Bosnia and Herzegovina","Georgia","Turkey"].includes(p.country)
+    check: (p) => ["Spain","France","Germany","Italy","Switzerland","Sweden","United Kingdom","Serbia","Croatia","Czech Republic","Austria","Netherlands","Belgium","Romania","Norway","Denmark","Greece","Bulgaria","Finland","Poland","Latvia","Slovenia","Slovakia","Hungary","Ukraine","Belarus","Moldova","Estonia","Portugal","Bosnia and Herzegovina","Georgia","Turkey","Russia","Lithuania","Luxembourg","Monaco","Ireland","Cyprus"].includes(p.country)
   },
   {
     id: "non_european",
@@ -575,7 +575,7 @@ const CATEGORIES = [
     shortLabel: "Non-European",
     icon: "\ud83c\udf0f",
     type: "country",
-    check: (p) => !["Spain","France","Germany","Italy","Switzerland","Sweden","United Kingdom","Serbia","Croatia","Czech Republic","Austria","Netherlands","Belgium","Romania","Norway","Denmark","Greece","Bulgaria","Finland","Poland","Latvia","Slovenia","Slovakia","Hungary","Ukraine","Belarus","Moldova","Estonia","Portugal","Bosnia and Herzegovina","Georgia","Turkey"].includes(p.country)
+    check: (p) => !["Spain","France","Germany","Italy","Switzerland","Sweden","United Kingdom","Serbia","Croatia","Czech Republic","Austria","Netherlands","Belgium","Romania","Norway","Denmark","Greece","Bulgaria","Finland","Poland","Latvia","Slovenia","Slovakia","Hungary","Ukraine","Belarus","Moldova","Estonia","Portugal","Bosnia and Herzegovina","Georgia","Turkey","Russia","Lithuania","Luxembourg","Monaco","Ireland","Cyprus"].includes(p.country)
   },
 
   // ===== ELITE CATEGORIES (derived from scrapable data) =====
