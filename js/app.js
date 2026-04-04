@@ -496,7 +496,7 @@
       }
       shareText += row + '\n';
     }
-    shareText += '\natpgrid.com';
+    shareText += '\natp-grid.web.app';
     return shareText;
   }
 
@@ -530,7 +530,7 @@
       <div style="height:8px"></div>
       ${gridRows}
       <div style="height:8px"></div>
-      <div class="share-url">atpgrid.com</div>
+      <div class="share-url">atp-grid.web.app</div>
     `;
   }
 

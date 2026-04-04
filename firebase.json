@@ -1,0 +1,21 @@
+{
+  "hosting": {
+    "site": "atp-grid",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".firebaseignore",
+      ".git",
+      ".git/**",
+      ".claude",
+      ".claude/**",
+      ".DS_Store",
+      "node_modules",
+      "node_modules/**",
+      "scripts",
+      "scripts/**",
+      "server.rb"
+    ]
+  }
+}
