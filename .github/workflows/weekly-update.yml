@@ -1,0 +1,44 @@
+name: Weekly Data Update & Deploy
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6am UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Scrape ATP player data
+        run: python3 scripts/scrape_atp.py
+
+      - name: Scrape player photos
+        run: python3 scripts/scrape_photos.py
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet js/players.js js/player-photos.js scripts/player_photos.json || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit updated data
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add js/players.js js/player-photos.js scripts/player_photos.json
+          git commit -m "Weekly data update: refresh player stats and photos"
+          git push
+
+      - name: Deploy to Firebase
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          npm install -g firebase-tools
+          firebase deploy --only hosting --token "$FIREBASE_TOKEN"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
