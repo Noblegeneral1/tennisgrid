@@ -35,6 +35,19 @@
       refreshRarityDisplay();
     });
 
+    // Auto-refresh grid at midnight if tab is still open
+    let lastCheckedDate = grid.date;
+    setInterval(() => {
+      const now = new Date();
+      const todayStr = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+      if (todayStr !== lastCheckedDate) {
+        lastCheckedDate = todayStr;
+        window.location.reload();
+      }
+    }, 30000);
+
     // Show rarity mode indicator
     const rarityBadge = document.getElementById('rarity-mode');
     if (rarityBadge) {
