@@ -475,7 +475,7 @@
   function buildShareText() {
     const totalCells = 9;
     const gridNum = getGridNumber(grid.date);
-    const strikesStr = '\u274c'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    const strikesStr = '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
     let shareText = `ATP Grid #${gridNum}\n`;
     shareText += `Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}\n\n`;
 
@@ -485,7 +485,7 @@
         const key = `r${r}c${c}`;
         if (answers[key]) {
           const rarity = rarityScores[key] || 50;
-          if (rarity <= 10) row += '\ud83d\udfe2';
+          if (rarity <= 10) row += '\ud83d\udfe9';
           else if (rarity <= 25) row += '\ud83d\udfe9';
           else if (rarity <= 50) row += '\ud83d\udfe8';
           else if (rarity <= 75) row += '\ud83d\udfe7';
@@ -503,7 +503,7 @@
   function buildSharePreviewHTML() {
     const totalCells = 9;
     const gridNum = getGridNumber(grid.date);
-    const strikesStr = '\u274c'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    const strikesStr = '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
 
     let gridRows = '';
     for (let r = 0; r < 3; r++) {
@@ -512,7 +512,7 @@
         const key = `r${r}c${c}`;
         if (answers[key]) {
           const rarity = rarityScores[key] || 50;
-          if (rarity <= 10) row += '\ud83d\udfe2';
+          if (rarity <= 10) row += '\ud83d\udfe9';
           else if (rarity <= 25) row += '\ud83d\udfe9';
           else if (rarity <= 50) row += '\ud83d\udfe8';
           else if (rarity <= 75) row += '\ud83d\udfe7';
