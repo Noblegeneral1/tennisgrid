@@ -66,6 +66,11 @@
       <span id="current-date-display" class="date-display">Today's Grid</span>
       <span class="subheader-sep">|</span>
       <span id="grid-number" class="grid-number"></span>
+      <span class="subheader-sep">|</span>
+      <div id="mode-toggle" class="mode-toggle">
+        <button class="mode-btn" data-mode="easy">Easy</button>
+        <button class="mode-btn active" data-mode="hard">Hard</button>
+      </div>
     </div>
     <div id="subheader-rarity" class="subheader-rarity" style="display:none">
       <span class="subheader-rarity-label">Current Rarity</span>
@@ -138,15 +143,24 @@
           </div>
           <div class="htp-rule">
             <span class="htp-num">3</span>
-            <span>You have <strong>3 strikes</strong> &mdash; only <strong>wrong</strong> guesses cost a strike</span>
+            <span>Only <strong>wrong</strong> guesses cost a strike &mdash; correct guesses are free!</span>
           </div>
           <div class="htp-rule">
             <span class="htp-num">4</span>
-            <span>Correct guesses are free! No penalty for getting it right</span>
-          </div>
-          <div class="htp-rule">
-            <span class="htp-num">5</span>
             <span>Each player can only be used <strong>once</strong> per grid</span>
+          </div>
+        </div>
+        <div class="htp-section">
+          <h3>Game Modes</h3>
+          <div class="htp-rules">
+            <div class="htp-rule">
+              <span class="htp-num" style="background: var(--green-dark);">H</span>
+              <span><strong>Hard Mode</strong> &mdash; 3 strikes and you're out</span>
+            </div>
+            <div class="htp-rule">
+              <span class="htp-num" style="background: var(--green-medium);">E</span>
+              <span><strong>Easy Mode</strong> &mdash; unlimited strikes, keep guessing until the grid is filled</span>
+            </div>
           </div>
         </div>
         <div class="htp-section">
@@ -160,17 +174,10 @@
           </div>
         </div>
         <div class="htp-section">
-          <h3>Category Rules</h3>
-          <ul class="htp-clarifications">
-            <li><strong>Grand Slams</strong><span>Men's Singles titles only</span></li>
-            <li><strong>Former #1 / Year-End #1</strong><span>ATP Singles ranking</span></li>
-            <li><strong>Davis Cup Champion</strong><span>Won the Davis Cup representing their country (any role)</span></li>
-            <li><strong>ATP Finals</strong><span>Won the year-end championship event (Singles)</span></li>
-            <li><strong>Olympic Gold</strong><span>Singles gold medal at the Summer Olympics</span></li>
-            <li><strong>Nationality</strong><span>Country the player represented on the ATP Tour</span></li>
-            <li><strong>Played in [decade]</strong><span>Was active on the ATP Tour during that decade</span></li>
-          </ul>
+          <h3>Today's Categories</h3>
+          <ul id="htp-today-categories" class="htp-clarifications"></ul>
         </div>
+        <button id="htp-play-btn" class="htp-play-btn">Let's Play!</button>
       </div>
     </div>
   </div>

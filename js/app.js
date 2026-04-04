@@ -8,6 +8,7 @@
   let selectedCell = null;
   let strikes = 0;
   const MAX_STRIKES = 3;
+  let gameMode = localStorage.getItem('atpgrid_mode') || 'hard';
   let answers = {}; // { "r0c1": playerId }
   let usedPlayers = new Set();
   let gameOver = false;
@@ -22,10 +23,13 @@
     grid = generateDailyGrid();
     RarityService.setGridContext(grid);
     renderGrid();
+    updateModeToggle();
     updateStrikesDisplay();
     setupEventListeners();
     loadSavedState();
     renderArchiveList();
+    populateTodayCategories();
+    showRulesOnFirstVisit();
 
     // Preload rarity data and listen for live updates
     RarityService.preloadDate(grid.date).then(() => {
@@ -200,31 +204,73 @@
     return '#8ab59a';
   }
 
+  // ===== GAME MODE =====
+  function updateModeToggle() {
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === gameMode);
+    });
+  }
+
+  function setGameMode(mode) {
+    gameMode = mode;
+    localStorage.setItem('atpgrid_mode', mode);
+    updateModeToggle();
+    updateStrikesDisplay();
+  }
+
+  // ===== RULES / HOW TO PLAY =====
+  function populateTodayCategories() {
+    const list = document.getElementById('htp-today-categories');
+    if (!list || !grid) return;
+    const allCats = [...grid.rows, ...grid.cols];
+    const seen = new Set();
+    list.innerHTML = '';
+    allCats.forEach(cat => {
+      if (seen.has(cat.id)) return;
+      seen.add(cat.id);
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>${cat.shortLabel}</strong><span>${cat.label}</span>`;
+      list.appendChild(li);
+    });
+  }
+
+  function showRulesOnFirstVisit() {
+    const today = new Date().toISOString().split('T')[0];
+    const key = `atpgrid_rules_shown_${today}`;
+    if (!localStorage.getItem(key)) {
+      document.getElementById('how-to-play-modal').classList.add('active');
+      localStorage.setItem(key, '1');
+    }
+  }
+
   // ===== STRIKES DISPLAY =====
   function updateStrikesDisplay() {
     const strikesEl = document.getElementById('strikes-display');
     if (!strikesEl) return;
-    let html = '';
-    for (let i = 0; i < MAX_STRIKES; i++) {
-      if (i < strikes) {
-        html += '<span class="strike-dot used"></span>';
-      } else {
-        html += '<span class="strike-dot"></span>';
-      }
-    }
-    strikesEl.innerHTML = html;
 
-    // Update strikes count (shows strikes used, not remaining)
     const attemptsEl = document.getElementById('attempts-count');
-    if (attemptsEl) {
-      attemptsEl.textContent = `${strikes} / ${MAX_STRIKES}`;
-    }
-
     const counterEl = document.getElementById('guess-counter');
-    if (strikes >= 2) {
-      counterEl.classList.add('low');
-    } else {
+
+    if (gameMode === 'easy') {
+      strikesEl.innerHTML = '';
+      if (attemptsEl) attemptsEl.textContent = `${strikes}`;
       counterEl.classList.remove('low');
+    } else {
+      let html = '';
+      for (let i = 0; i < MAX_STRIKES; i++) {
+        if (i < strikes) {
+          html += '<span class="strike-dot used"></span>';
+        } else {
+          html += '<span class="strike-dot"></span>';
+        }
+      }
+      strikesEl.innerHTML = html;
+      if (attemptsEl) attemptsEl.textContent = `${strikes} / ${MAX_STRIKES}`;
+      if (strikes >= 2) {
+        counterEl.classList.add('low');
+      } else {
+        counterEl.classList.remove('low');
+      }
     }
   }
 
@@ -402,7 +448,7 @@
       showGuessError(player, matchesRow, matchesCol, rowCat, colCat);
       saveState();
 
-      if (strikes >= MAX_STRIKES) {
+      if (gameMode === 'hard' && strikes >= MAX_STRIKES) {
         closeSearchModal();
         endGame(false);
       }
@@ -448,7 +494,7 @@
       title.textContent = 'Grid Complete!';
       title.style.color = '#2d6a4f';
     } else {
-      title.textContent = '3 Strikes - Game Over!';
+      title.textContent = `${MAX_STRIKES} Strikes - Game Over!`;
       title.style.color = '#e76f51';
     }
 
@@ -475,8 +521,11 @@
   function buildShareText() {
     const totalCells = 9;
     const gridNum = getGridNumber(grid.date);
-    const strikesStr = '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
-    let shareText = `ATP Grid #${gridNum}\n`;
+    const modeLabel = gameMode === 'easy' ? ' (Easy)' : '';
+    const strikesStr = gameMode === 'easy'
+      ? '\ud83d\udd34'.repeat(Math.min(strikes, 9))
+      : '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    let shareText = `ATP Grid #${gridNum}${modeLabel}\n`;
     shareText += `Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}\n\n`;
 
     for (let r = 0; r < 3; r++) {
@@ -503,7 +552,10 @@
   function buildSharePreviewHTML() {
     const totalCells = 9;
     const gridNum = getGridNumber(grid.date);
-    const strikesStr = '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    const modeLabel = gameMode === 'easy' ? ' (Easy)' : '';
+    const strikesStr = gameMode === 'easy'
+      ? '\ud83d\udd34'.repeat(Math.min(strikes, 9))
+      : '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
 
     let gridRows = '';
     for (let r = 0; r < 3; r++) {
@@ -525,7 +577,7 @@
     }
 
     return `
-      <div class="share-title">ATP Grid #${gridNum}</div>
+      <div class="share-title">ATP Grid #${gridNum}${modeLabel}</div>
       <div class="share-score">Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}</div>
       <div style="height:8px"></div>
       ${gridRows}
@@ -790,6 +842,11 @@
 
   // ===== EVENT LISTENERS =====
   function setupEventListeners() {
+    // Mode toggle
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setGameMode(btn.dataset.mode));
+    });
+
     document.getElementById('search-input').addEventListener('input', (e) => {
       renderSearchResults(e.target.value);
     });
@@ -830,6 +887,9 @@
       document.getElementById('how-to-play-modal').classList.add('active');
     });
     document.getElementById('close-how-to-play').addEventListener('click', () => {
+      document.getElementById('how-to-play-modal').classList.remove('active');
+    });
+    document.getElementById('htp-play-btn').addEventListener('click', () => {
       document.getElementById('how-to-play-modal').classList.remove('active');
     });
     document.getElementById('how-to-play-modal').addEventListener('click', (e) => {
