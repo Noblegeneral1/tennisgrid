@@ -219,6 +219,74 @@
   }
 
   // ===== RULES / HOW TO PLAY =====
+  const CATEGORY_DESCRIPTIONS = {
+    ao_champ: "Won at least one Australian Open singles title",
+    rg_champ: "Won at least one French Open singles title",
+    w_champ: "Won at least one Wimbledon singles title",
+    uso_champ: "Won at least one US Open singles title",
+    gs_champ: "Won any Grand Slam singles title",
+    multi_gs: "Won 2 or more Grand Slam singles titles",
+    no_gs: "Never won a Grand Slam singles title",
+    one_slam_wonder: "Won exactly one Grand Slam in their career",
+    career_grand_slam: "Won all 4 Grand Slam titles during their career",
+    clay_specialist: "Won the French Open but no other Slam",
+    grass_specialist: "Won Wimbledon but no other Slam",
+    year_end_no1: "Finished at least one season ranked World No. 1",
+    olympic_gold: "Won Olympic gold in singles",
+    davis_cup: "Won the Davis Cup representing their country",
+    atp_finals: "Won the year-end ATP Finals championship",
+    peaked_no1: "Reached the World No. 1 ranking at some point",
+    peaked_top3: "Career-high ranking of No. 3 or better",
+    peaked_top5: "Career-high ranking of No. 5 or better",
+    peaked_top10: "Career-high ranking in the Top 10",
+    peaked_top20: "Career-high ranking in the Top 20",
+    masters_1000_champ: "Won at least one ATP Masters 1000 event",
+    masters_5plus: "Won 5 or more Masters 1000 titles",
+    masters_10plus: "Won 10 or more Masters 1000 titles",
+    weeks_no1_100: "Spent 100+ weeks ranked World No. 1",
+    no_titles: "Never won an ATP singles title",
+    titles_20plus: "Won 20+ career ATP singles titles",
+    titles_10plus: "Won 10+ career ATP singles titles",
+    titles_5plus: "Won 5+ career ATP singles titles",
+    one_title_wonder: "Won exactly one ATP title in their career",
+    wins_500plus: "500+ career match wins on the ATP Tour",
+    wins_300plus: "300+ career match wins on the ATP Tour",
+    sub_100_wins: "Fewer than 100 career match wins",
+    sub_50_wins: "Fewer than 50 career match wins",
+    prize_10m: "Earned $10M+ in prize money in a single season",
+    prize_5m: "Earned $5M+ in prize money in a single season",
+    prize_1m: "Earned $1M+ in prize money in a single season",
+    left_handed: "Plays with a left-handed forehand",
+    right_handed: "Plays with a right-handed forehand",
+    active: "Currently competing on the ATP Tour",
+    retired: "No longer competing on the ATP Tour",
+    never_top10: "Career-high ranking was outside the Top 10",
+    never_top20: "Career-high ranking was outside the Top 20",
+    peaked_outside50: "Career-high ranking was outside the Top 50",
+    no_masters: "Never won a Masters 1000 event",
+    no_slam_no_masters: "Never won a Grand Slam or Masters 1000",
+    tall_player: "Listed height of 6'4\" (193cm) or taller",
+    short_player: "Listed height under 5'10\" (178cm)",
+    clay_100_wins: "Won 100+ career matches on clay courts",
+    hard_100_wins: "Won 100+ career matches on hard courts",
+    grass_50_wins: "Won 50+ career matches on grass courts",
+    clay_200_wins: "Won 200+ career matches on clay courts",
+    young_first_title: "Won their first ATP title before turning 21",
+    title_after_30: "Won an ATP title at age 30 or older",
+    long_career: "Professional career spanning 15+ years",
+    big_server: "Career ace rate of 10% or higher",
+    european: "Represents a European nation",
+    non_european: "Represents a nation outside of Europe",
+    south_american: "Represents a South American nation",
+  };
+
+  function getCategoryDescription(cat) {
+    if (CATEGORY_DESCRIPTIONS[cat.id]) return CATEGORY_DESCRIPTIONS[cat.id];
+    if (cat.type === 'country') return 'Represents ' + cat.shortLabel + ' on the ATP Tour';
+    if (cat.type === 'era') return 'Was active on tour during the ' + cat.shortLabel.replace('Played in ', '');
+    return cat.label;
+  }
+
   function populateTodayCategories() {
     const list = document.getElementById('htp-today-categories');
     if (!list || !grid) return;
@@ -229,7 +297,7 @@
       if (seen.has(cat.id)) return;
       seen.add(cat.id);
       const li = document.createElement('li');
-      li.innerHTML = `<strong>${cat.shortLabel}</strong><span>${cat.label}</span>`;
+      li.innerHTML = `<strong>${cat.shortLabel}</strong><span>${getCategoryDescription(cat)}</span>`;
       list.appendChild(li);
     });
   }
