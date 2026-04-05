@@ -13,6 +13,8 @@
   let usedPlayers = new Set();
   let gameOver = false;
   let rarityScores = {};
+  let revealedCells = new Set(); // cells auto-filled via hint reveal
+  let sampleAnswers = {}; // { "r0c0": playerId } - locked sample answers for strikeout
   let currentView = 'today'; // 'today' or 'archive'
   let archiveDate = null;
 
@@ -52,15 +54,6 @@
       }
     }, 30000);
 
-    // Show rarity mode indicator
-    const rarityBadge = document.getElementById('rarity-mode');
-    if (rarityBadge) {
-      if (RarityService.isLive()) {
-        rarityBadge.textContent = 'LIVE RARITY';
-        rarityBadge.classList.add('live');
-        rarityBadge.style.display = '';
-      }
-    }
   }
 
   // ===== RENDER =====
@@ -141,14 +134,16 @@
     const player = PLAYERS.find(p => p.id === playerId);
     if (!player) return;
 
+    const isRevealed = revealedCells.has(cellKey);
     const rarity = rarityScores[cellKey] || 50;
-    const rarityColor = getRarityColor(rarity);
+    const rarityColor = isRevealed ? '#f5c6c6' : getRarityColor(rarity);
     const initials = getInitials(player.name);
 
     const hasPhoto = typeof PLAYER_PHOTOS !== 'undefined' && PLAYER_PHOTOS[playerId];
     const photoUrl = hasPhoto ? PLAYER_PHOTOS[playerId] : '';
 
-    cell.className = 'grid-cell data-cell answered';
+    cell.className = 'grid-cell data-cell answered' + (isRevealed ? ' revealed' : '');
+    cell.style.cursor = 'pointer';
     cell.innerHTML = `
       <div class="cell-answered" style="background: ${rarityColor}">
         ${photoUrl
@@ -156,9 +151,18 @@
           : ''}
         <div class="player-avatar" ${photoUrl ? 'style="display:none"' : ''}>${initials}</div>
         <div class="player-name-cell">${getShortName(player.name)}</div>
-        <div class="rarity-badge">${rarity}%</div>
+        ${isRevealed
+          ? '<div class="revealed-badge">REVEALED</div>'
+          : `<div class="rarity-badge" style="background:${getRarityBadgeColor(rarity)};color:${getRarityBadgeTextColor(rarity)}">${rarity}%</div>`}
       </div>
     `;
+
+    // Click to open player bio
+    const ri = parseInt(cellKey[1]);
+    const ci = parseInt(cellKey[3]);
+    cell.addEventListener('click', () => {
+      showPlayerBio(player);
+    });
   }
 
   function getInitials(name) {
@@ -195,13 +199,27 @@
   // Rarity calculation is now handled by RarityService (js/rarity.js)
   // Falls back to local estimation when Firebase is not configured
 
-  function getRarityColor(rarity) {
-    // Muted green palette - darker = rarer
-    if (rarity <= 10) return '#2d5e45';
-    if (rarity <= 25) return '#3b7156';
-    if (rarity <= 50) return '#4a8b6a';
-    if (rarity <= 75) return '#6a9e80';
-    return '#8ab59a';
+  // === RARITY SOURCE OF TRUTH ===
+  // Cell bg matches category headers exactly
+  function getRarityColor() {
+    return '#2d6a4f'; // Lighter green than headers (#1a3c34)
+  }
+
+  // Pill colors + share emojis must stay in sync
+  // Tier 1: 0-10%  → #FACC15 (yellow)  → 🌟
+  // Tier 2: 11-25% → #22C55E (green)   → 🟩
+  // Tier 3: 26-50% → #F97316 (orange)  → 🟧
+  // Tier 4: 51%+   → #EF4444 (red)     → 🟥
+  function getRarityBadgeColor(rarity) {
+    if (rarity <= 10) return '#FACC15';
+    if (rarity <= 25) return '#22C55E';
+    if (rarity <= 50) return '#F97316';
+    return '#EF4444';
+  }
+
+  function getRarityBadgeTextColor(rarity) {
+    if (rarity <= 10) return '#1a1a1a'; // dark text on yellow
+    return '#fff'; // white text on green/orange/red
   }
 
   // ===== GAME MODE =====
@@ -212,10 +230,44 @@
   }
 
   function setGameMode(mode) {
+    if (mode === gameMode) return;
+    // Save current mode's state before switching
+    if (grid) saveState();
+
     gameMode = mode;
     localStorage.setItem('atpgrid_mode', mode);
+
+    // Load the new mode's state (or start fresh)
+    answers = {};
+    usedPlayers = new Set();
+    strikes = 0;
+    gameOver = false;
+    rarityScores = {};
+    revealedCells = new Set();
+    sampleAnswers = {};
+    hintCache = {};
+
+    const saved = getSavedStateForDate(grid.date, mode);
+    if (saved) {
+      answers = saved.answers || {};
+      usedPlayers = new Set(saved.usedPlayers || []);
+      strikes = saved.strikes ?? 0;
+      gameOver = saved.gameOver || false;
+      rarityScores = saved.rarityScores || {};
+      revealedCells = new Set(saved.revealedCells || []);
+      sampleAnswers = saved.sampleAnswers || {};
+    }
+
     updateModeToggle();
+    renderGrid();
     updateStrikesDisplay();
+    updateCornerRarity();
+    updateCountdown();
+    renderArchiveList();
+
+    if (gameOver) {
+      endGame(Object.keys(answers).length >= 9);
+    }
   }
 
   // ===== RULES / HOW TO PLAY =====
@@ -345,20 +397,21 @@
   function updateCornerRarity() {
     const el = document.getElementById('corner-rarity');
     if (!el) return;
-    const count = Object.keys(rarityScores).length;
+    // Only count genuinely guessed cells (not revealed)
+    let total = 0;
+    let count = 0;
+    for (const key in rarityScores) {
+      if (answers[key] && !revealedCells.has(key)) {
+        total += rarityScores[key];
+        count++;
+      }
+    }
     if (count === 0) {
       el.innerHTML = '';
       return;
     }
-    let total = 0;
-    for (const key in rarityScores) {
-      total += rarityScores[key];
-    }
     const avg = Math.round(total / count);
     el.innerHTML = `<div class="corner-rarity-display"><span class="corner-rarity-value">${avg}%</span><span class="corner-rarity-label">Rarity</span></div>`;
-    // Also hide the subheader badge
-    const badge = document.getElementById('subheader-rarity');
-    if (badge) badge.style.display = 'none';
   }
 
   // ===== SEARCH MODAL =====
@@ -381,10 +434,146 @@
       <span class="modal-cat">${getCategoryIcon(colCat.id)} ${colCat.shortLabel}</span>
     `;
 
+    // Show hint button in easy mode only
+    const hintContainer = document.getElementById('hint-container');
+    const hintText = document.getElementById('hint-text');
+    const cellKey = `r${rowIdx}c${colIdx}`;
+    const cached = hintCache[cellKey];
+
+    if (hintContainer) {
+      hintContainer.style.display = gameMode === 'easy' ? '' : 'none';
+      const hintBtn = document.getElementById('hint-btn');
+
+      if (cached) {
+        // Restore previous hints for this cell
+        hintPlayer = cached.player;
+        hintShown = [...cached.shown];
+        hintText.textContent = hintShown.join('\n');
+        hintText.style.display = hintShown.length > 0 ? '' : 'none';
+        // Restore button state
+        if (hintBtn) {
+          if (cached.revealed) {
+            hintBtn.textContent = '✓ Revealed';
+            hintBtn.disabled = true;
+          } else {
+            // Check if next press would be the last
+            hintBtn.textContent = '💡 Hint';
+            hintBtn.disabled = false;
+          }
+        }
+      } else {
+        // Fresh cell, no hints yet
+        hintPlayer = null;
+        hintShown = [];
+        hintText.textContent = '';
+        hintText.style.display = 'none';
+        if (hintBtn) {
+          hintBtn.textContent = '💡 Hint';
+          hintBtn.disabled = false;
+        }
+      }
+    }
+
     modal.classList.add('active');
     input.value = '';
     input.focus();
     renderSearchResults('');
+  }
+
+  let hintPlayer = null;
+  let hintShown = [];
+  let hintCache = {}; // { "r0c0": { player, shown } } - persists hints per cell
+
+  function showHint() {
+    if (!selectedCell) return;
+    const { row, col } = selectedCell;
+    const validIds = grid.validAnswers[row]?.[col] || [];
+    const available = validIds.filter(id => !usedPlayers.has(id));
+    if (available.length === 0) return;
+
+    // Lock to one player per cell opening — pick on first hint press
+    if (!hintPlayer || !available.includes(hintPlayer.id)) {
+      const randomId = available[Math.floor(Math.random() * available.length)];
+      hintPlayer = PLAYERS.find(p => p.id === randomId);
+      hintShown = [];
+    }
+    if (!hintPlayer) return;
+
+    // Build hints ordered from vague to specific (bigger giveaways last)
+    const allHints = [];
+    const gs = hintPlayer.grandSlams || {};
+    const totalSlams = (gs.ao || 0) + (gs.rg || 0) + (gs.w || 0) + (gs.uso || 0);
+
+    // Level 1 — Very vague
+    if (hintPlayer.hand === 'L') allHints.push('This player is left-handed');
+    else allHints.push('This player is right-handed');
+    if (hintPlayer.heightCm > 0) allHints.push(`This player is ${hintPlayer.heightCm}cm tall`);
+    if (hintPlayer.decades?.length > 0) allHints.push(`This player was active in the ${hintPlayer.decades.join('s, ')}s`);
+
+    // Level 2 — Moderate
+    if (hintPlayer.careerWins > 0) allHints.push(`This player has ${hintPlayer.careerWins} career wins`);
+    if (hintPlayer.titles > 0) allHints.push(`This player has ${hintPlayer.titles} career title${hintPlayer.titles > 1 ? 's' : ''}`);
+    if (hintPlayer.peakRanking <= 10) allHints.push(`This player peaked at World No. ${hintPlayer.peakRanking}`);
+
+    // Level 3 — Strong hints
+    if (hintPlayer.masters1000 > 0) allHints.push(`This player has ${hintPlayer.masters1000} Masters 1000 title${hintPlayer.masters1000 > 1 ? 's' : ''}`);
+    if (totalSlams > 0) allHints.push(`This player won ${totalSlams} Grand Slam${totalSlams > 1 ? 's' : ''}`);
+    if (hintPlayer.weeksAtNo1 > 0) allHints.push(`This player spent ${hintPlayer.weeksAtNo1} weeks at No. 1`);
+
+    // Level 4 — Biggest giveaway
+    if (hintPlayer.country) allHints.push(`This player represents ${hintPlayer.country}`);
+
+    // Reveal hints in order (not random)
+    const remaining = allHints.filter(h => !hintShown.includes(h));
+    const hintText = document.getElementById('hint-text');
+    const hintBtn = document.getElementById('hint-btn');
+
+    const cellKey = `r${row}c${col}`;
+
+    if (remaining.length === 0) {
+      // All hints used — auto-fill the player into the grid
+      hintCache[cellKey] = { player: hintPlayer, shown: [...hintShown], revealed: true };
+      if (selectedCell && hintPlayer) {
+        answers[cellKey] = hintPlayer.id;
+        usedPlayers.add(hintPlayer.id);
+        revealedCells.add(cellKey);
+
+        // Record to rarity
+        RarityService.recordSelection(grid.date, cellKey, hintPlayer.id).then(rarity => {
+          rarityScores[cellKey] = rarity;
+          const cellEl = document.querySelector(`[data-key="${cellKey}"]`);
+          if (cellEl) renderAnsweredCell(cellEl, hintPlayer.id, cellKey);
+          updateCornerRarity();
+          saveState();
+        });
+
+        closeSearchModal();
+        renderGrid();
+        updateCornerRarity();
+        saveState();
+
+        // Check if grid is complete
+        if (Object.keys(answers).length >= 9) {
+          endGame(true);
+        }
+      }
+      return;
+    }
+
+    const hint = remaining[0]; // Take next in order
+    hintShown.push(hint);
+
+    hintText.textContent = hintShown.join('\n');
+    hintText.style.display = '';
+
+    // Save to cache so hints persist when reopening this cell
+    hintCache[cellKey] = { player: hintPlayer, shown: [...hintShown], revealed: false };
+
+    // Check if that was the last hint — update button text
+    const stillRemaining = allHints.filter(h => !hintShown.includes(h));
+    if (stillRemaining.length === 0) {
+      hintBtn.textContent = '👤 Reveal';
+    }
   }
 
   function closeSearchModal() {
@@ -524,16 +713,186 @@
   }
 
   function showGuessError(player, matchesRow, matchesCol, rowCat, colCat) {
-    const errorDiv = document.getElementById('guess-error');
-    let msg = `${player.name} doesn't match: `;
+    const toast = document.getElementById('error-toast');
+    if (!toast) return;
     const misses = [];
     if (!matchesRow) misses.push(rowCat.shortLabel);
     if (!matchesCol) misses.push(colCat.shortLabel);
-    msg += misses.join(' & ');
+    toast.textContent = `${player.name} doesn't match: ${misses.join(' & ')}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
 
-    errorDiv.textContent = msg;
-    errorDiv.classList.add('show');
-    setTimeout(() => errorDiv.classList.remove('show'), 2500);
+  // ===== PLAYER FACTS =====
+  function generatePlayerFact(player) {
+    const facts = [];
+    const gs = player.grandSlams || {};
+    const totalSlams = (gs.ao || 0) + (gs.rg || 0) + (gs.w || 0) + (gs.uso || 0);
+
+    // Slam-related facts
+    if (totalSlams > 0) {
+      const parts = [];
+      if (gs.ao) parts.push(`${gs.ao} Australian Open${gs.ao > 1 ? 's' : ''}`);
+      if (gs.rg) parts.push(`${gs.rg} French Open${gs.rg > 1 ? 's' : ''}`);
+      if (gs.w) parts.push(`${gs.w} Wimbledon${gs.w > 1 ? 's' : ''}`);
+      if (gs.uso) parts.push(`${gs.uso} US Open${gs.uso > 1 ? 's' : ''}`);
+      facts.push(`${player.name} won ${totalSlams} Grand Slam${totalSlams > 1 ? 's' : ''}: ${parts.join(', ')}`);
+    }
+
+    if (player.careerWins >= 500) facts.push(`${player.name} has ${player.careerWins} career match wins`);
+    if (player.titles >= 20) facts.push(`${player.name} has won ${player.titles} career titles`);
+    if (player.masters1000 >= 5) facts.push(`${player.name} has ${player.masters1000} Masters 1000 titles`);
+    if (player.weeksAtNo1 >= 50) facts.push(`${player.name} spent ${player.weeksAtNo1} weeks ranked World No. 1`);
+    if (player.heightCm >= 198) {
+      const ft = Math.floor(player.heightCm / 2.54 / 12);
+      const inches = Math.round(player.heightCm / 2.54 % 12);
+      facts.push(`${player.name} stands ${player.heightCm}cm (${ft}'${inches}") tall`);
+    }
+    if (player.hand === 'L') facts.push(`${player.name} is a left-handed player`);
+    if (player.ageFirstTitle && player.ageFirstTitle <= 19) facts.push(`${player.name} won their first ATP title at just ${player.ageFirstTitle} years old`);
+    if (player.careerLength >= 18) facts.push(`${player.name} had a ${player.careerLength}-year professional career`);
+    if (player.clayWins >= 200) facts.push(`${player.name} won ${player.clayWins} career matches on clay`);
+    if (player.grassWins >= 100) facts.push(`${player.name} won ${player.grassWins} career matches on grass`);
+    if (player.peakRanking === 1) facts.push(`${player.name} reached the World No. 1 ranking`);
+    if (player.olympicSinglesGold) facts.push(`${player.name} won Olympic gold in singles`);
+    if (player.aceRate >= 15) facts.push(`${player.name} has an ace rate of ${player.aceRate}%`);
+    if (player.country) facts.push(`${player.name} represents ${player.country}`);
+
+    // Prefer interesting facts over generic country ones
+    const good = facts.filter(f => !f.includes('represents'));
+    const pool = good.length > 0 ? good : facts;
+    return pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null;
+  }
+
+  function showFactToast(text) {
+    const toast = document.getElementById('fact-toast');
+    if (!toast || !text) return;
+    toast.textContent = text;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // ===== PLAYER BIO =====
+  function showPlayerBio(player) {
+    const modal = document.getElementById('player-bio-modal');
+    const header = document.getElementById('player-bio-header');
+    const factsEl = document.getElementById('player-bio-facts');
+
+    const hasPhoto = typeof PLAYER_PHOTOS !== 'undefined' && PLAYER_PHOTOS[player.id];
+    const photoUrl = hasPhoto ? PLAYER_PHOTOS[player.id] : '';
+    const initials = getInitials(player.name);
+    const gs = player.grandSlams || {};
+    const totalSlams = (gs.ao || 0) + (gs.rg || 0) + (gs.w || 0) + (gs.uso || 0);
+
+    header.innerHTML = `
+      ${photoUrl
+        ? `<img class="bio-photo" src="${photoUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : ''}
+      <div class="bio-avatar" ${photoUrl ? 'style="display:none"' : ''}>${initials}</div>
+      <div class="bio-name">${player.name}</div>
+      <div class="bio-country">${getCountryFlag(player.country)} ${player.country}${player.active ? ' · Active' : ''}</div>
+    `;
+
+    // === HERO STATS (big achievements) ===
+    const heroes = [];
+    if (totalSlams > 0) heroes.push({ value: totalSlams, label: 'Grand Slams' });
+    if (player.titles > 0) heroes.push({ value: player.titles, label: 'ATP Titles' });
+    if (player.peakRanking <= 10) heroes.push({ value: '#' + player.peakRanking, label: 'Peak Ranking' });
+    if (player.careerWins > 0) heroes.push({ value: player.careerWins, label: 'Career Wins' });
+
+    // SVG icon helper (16x16 inline icons)
+    const svgIcon = (d) => `<svg class="bio-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const icons = {
+      trophy: svgIcon('<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>'),
+      target: svgIcon('<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>'),
+      medal: svgIcon('<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/>'),
+      flag: svgIcon('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>'),
+      star: svgIcon('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'),
+      crown: svgIcon('<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>'),
+      clock: svgIcon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+      calendar: svgIcon('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+      zap: svgIcon('<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>'),
+    };
+
+    // === TROPHY CABINET ===
+    const trophies = [];
+    if (totalSlams > 0) {
+      const parts = [];
+      if (gs.ao) parts.push(`AO: ${gs.ao}`);
+      if (gs.rg) parts.push(`RG: ${gs.rg}`);
+      if (gs.w) parts.push(`WIM: ${gs.w}`);
+      if (gs.uso) parts.push(`USO: ${gs.uso}`);
+      trophies.push({ icon: icons.trophy, text: parts.join(' · ') });
+    }
+    if (player.masters1000 > 0) trophies.push({ icon: icons.target, text: `${player.masters1000} Masters 1000` });
+    if (player.olympicSinglesGold) trophies.push({ icon: icons.medal, text: 'Olympic Gold' });
+    if (player.davisCup) trophies.push({ icon: icons.flag, text: 'Davis Cup' });
+    if (player.atpFinals) trophies.push({ icon: icons.trophy, text: 'ATP Finals' });
+    if (player.yearEndNo1) trophies.push({ icon: icons.star, text: 'Year-End No. 1' });
+
+    // === CAREER MILESTONES ===
+    const milestones = [];
+    if (player.weeksAtNo1 > 0) milestones.push({ icon: icons.crown, text: `${player.weeksAtNo1} weeks at No. 1` });
+    if (player.ageFirstTitle && player.ageFirstTitle <= 21) milestones.push({ icon: icons.zap, text: `First title at ${player.ageFirstTitle}` });
+    if (player.careerLength >= 10) milestones.push({ icon: icons.clock, text: `${player.careerLength}-year career` });
+    if (player.decades?.length > 0) milestones.push({ icon: icons.calendar, text: `${player.decades.join('s, ')}s` });
+
+    // === SURFACE PERFORMANCE ===
+    const surfaces = [];
+    if (player.clayWins >= 50) surfaces.push({ label: 'Clay', value: player.clayWins, color: '#c9713d' });
+    if (player.hardWins >= 50) surfaces.push({ label: 'Hard', value: player.hardWins, color: '#3d7cc9' });
+    if (player.grassWins >= 20) surfaces.push({ label: 'Grass', value: player.grassWins, color: '#4a9e5c' });
+
+    // === PLAYER PROFILE ===
+    const profile = [];
+    if (player.heightCm > 0) {
+      const ft = Math.floor(player.heightCm / 2.54 / 12);
+      const inches = Math.round(player.heightCm / 2.54 % 12);
+      profile.push({ label: 'Height', value: `${ft}'${inches}"` });
+    }
+    profile.push({ label: 'Plays', value: player.hand === 'L' ? 'Left' : 'Right' });
+    if (player.aceRate >= 5) profile.push({ label: 'Ace Rate', value: `${player.aceRate}%` });
+
+    // === BUILD HTML ===
+    let html = '';
+
+    // Hero stats row
+    if (heroes.length > 0) {
+      html += `<div class="bio-heroes" data-count="${heroes.length}">${heroes.map(h =>
+        `<div class="bio-hero"><span class="bio-hero-value">${h.value}</span><span class="bio-hero-label">${h.label}</span></div>`
+      ).join('')}</div>`;
+    }
+
+    // Trophy cabinet
+    if (trophies.length > 0) {
+      html += `<div class="bio-section"><div class="bio-section-title">Trophy Cabinet</div><div class="bio-grid">${trophies.map(t =>
+        `<div class="bio-chip"><span class="bio-chip-icon">${t.icon}</span>${t.text}</div>`
+      ).join('')}</div></div>`;
+    }
+
+    // Career milestones
+    if (milestones.length > 0) {
+      html += `<div class="bio-section"><div class="bio-section-title">Career</div><div class="bio-grid">${milestones.map(m =>
+        `<div class="bio-chip"><span class="bio-chip-icon">${m.icon}</span>${m.text}</div>`
+      ).join('')}</div></div>`;
+    }
+
+    // Surface performance
+    if (surfaces.length > 0) {
+      html += `<div class="bio-section"><div class="bio-section-title">Surface Wins</div><div class="bio-surfaces">${surfaces.map(s =>
+        `<div class="bio-surface"><span class="bio-surface-value" style="color:${s.color}">${s.value}</span><span class="bio-surface-label">${s.label}</span></div>`
+      ).join('')}</div></div>`;
+    }
+
+    // Player profile micro-grid
+    if (profile.length > 0) {
+      html += `<div class="bio-section"><div class="bio-profile-grid">${profile.map(p =>
+        `<div class="bio-profile-stat"><span class="bio-profile-label">${p.label}</span><span class="bio-profile-value">${p.value}</span></div>`
+      ).join('')}</div></div>`;
+    }
+
+    factsEl.innerHTML = html;
+    modal.classList.add('active');
   }
 
   // ===== GAME STATE =====
@@ -541,7 +900,103 @@
     gameOver = true;
     document.getElementById('game-over-modal').classList.add('active');
     renderGameOverStats(won);
+    if (!won && gameMode === 'hard') {
+      revealSampleAnswers();
+    }
     saveState();
+  }
+
+  function generateCategoryFact(player, rowCat, colCat) {
+    const gs = player.grandSlams || {};
+    const facts = [];
+
+    // Facts relevant to the row category
+    const catFacts = {
+      ao_champ: gs.ao ? `${player.name} won the Australian Open ${gs.ao} time${gs.ao > 1 ? 's' : ''}` : null,
+      rg_champ: gs.rg ? `${player.name} won the French Open ${gs.rg} time${gs.rg > 1 ? 's' : ''}` : null,
+      w_champ: gs.w ? `${player.name} won Wimbledon ${gs.w} time${gs.w > 1 ? 's' : ''}` : null,
+      uso_champ: gs.uso ? `${player.name} won the US Open ${gs.uso} time${gs.uso > 1 ? 's' : ''}` : null,
+      gs_champ: (gs.ao||0)+(gs.rg||0)+(gs.w||0)+(gs.uso||0) > 0 ? `${player.name} won ${(gs.ao||0)+(gs.rg||0)+(gs.w||0)+(gs.uso||0)} Grand Slam${(gs.ao||0)+(gs.rg||0)+(gs.w||0)+(gs.uso||0) > 1 ? 's' : ''}` : null,
+      peaked_no1: player.peakRanking === 1 ? `${player.name} reached World No. 1` : null,
+      peaked_top5: player.peakRanking <= 5 ? `${player.name} peaked at World No. ${player.peakRanking}` : null,
+      peaked_top10: player.peakRanking <= 10 ? `${player.name} peaked at World No. ${player.peakRanking}` : null,
+      masters_1000_champ: player.masters1000 > 0 ? `${player.name} won ${player.masters1000} Masters 1000 title${player.masters1000 > 1 ? 's' : ''}` : null,
+      year_end_no1: player.yearEndNo1 ? `${player.name} finished a season as World No. 1` : null,
+      olympic_gold: player.olympicSinglesGold ? `${player.name} won Olympic gold in singles` : null,
+      davis_cup: player.davisCup ? `${player.name} won the Davis Cup` : null,
+      left_handed: player.hand === 'L' ? `${player.name} is a left-handed player` : null,
+      active: player.active ? `${player.name} is currently active on tour` : null,
+      retired: !player.active ? `${player.name} is retired from professional tennis` : null,
+      european: `${player.name} represents ${player.country}`,
+      non_european: `${player.name} represents ${player.country}`,
+      long_career: player.careerLength >= 15 ? `${player.name} had a ${player.careerLength}-year career` : null,
+      clay_200_wins: player.clayWins >= 200 ? `${player.name} won ${player.clayWins} matches on clay` : null,
+      clay_100_wins: player.clayWins >= 100 ? `${player.name} won ${player.clayWins} matches on clay` : null,
+      wins_500plus: player.careerWins >= 500 ? `${player.name} has ${player.careerWins} career wins` : null,
+      wins_300plus: player.careerWins >= 300 ? `${player.name} has ${player.careerWins} career wins` : null,
+      titles_20plus: player.titles >= 20 ? `${player.name} won ${player.titles} career titles` : null,
+      titles_10plus: player.titles >= 10 ? `${player.name} won ${player.titles} career titles` : null,
+      tall_player: player.heightCm >= 193 ? `${player.name} stands ${player.heightCm}cm tall` : null,
+      big_server: player.aceRate >= 10 ? `${player.name} has an ace rate of ${player.aceRate}%` : null,
+    };
+
+    // Check both categories for relevant facts
+    [rowCat, colCat].forEach(cat => {
+      const f = catFacts[cat.id];
+      if (f) facts.push(f);
+    });
+
+    // Fallback to generic fact
+    if (facts.length === 0) return generatePlayerFact(player);
+    return facts[Math.floor(Math.random() * facts.length)];
+  }
+
+  function revealSampleAnswers() {
+    // Pick sample answers once and lock them in
+    const needsPick = Object.keys(sampleAnswers).length === 0;
+    const shownPlayers = new Set(Object.values(sampleAnswers));
+
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const cellKey = `r${r}c${c}`;
+        if (answers[cellKey]) continue;
+
+        let sampleId = sampleAnswers[cellKey];
+        if (!sampleId && needsPick) {
+          const validIds = grid.validAnswers[r]?.[c] || [];
+          const available = validIds.filter(id => !usedPlayers.has(id) && !shownPlayers.has(id));
+          if (available.length === 0) continue;
+          sampleId = available[Math.floor(Math.random() * available.length)];
+          sampleAnswers[cellKey] = sampleId;
+          shownPlayers.add(sampleId);
+        }
+        if (!sampleId) continue;
+
+        const player = PLAYERS.find(p => p.id === sampleId);
+        if (!player) continue;
+
+        const hasPhoto = typeof PLAYER_PHOTOS !== 'undefined' && PLAYER_PHOTOS[sampleId];
+        const photoUrl = hasPhoto ? PLAYER_PHOTOS[sampleId] : '';
+        const initials = getInitials(player.name);
+
+        const cellEl = document.querySelector(`[data-key="${cellKey}"]`);
+        if (cellEl) {
+          cellEl.innerHTML = `
+            <div class="cell-sample-answer">
+              ${photoUrl
+                ? `<img class="sample-photo" src="${photoUrl}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+                : ''}
+              <div class="sample-avatar" ${photoUrl ? 'style="display:none"' : ''}>${initials}</div>
+              <div class="sample-player-name">${getShortName(player.name)}</div>
+            </div>
+          `;
+          cellEl.style.cursor = 'pointer';
+          cellEl.addEventListener('click', () => {
+            showPlayerBio(player);
+          });
+        }
+      }
+    }
   }
 
   function renderGameOverStats(won) {
@@ -549,13 +1004,20 @@
     const answeredCount = Object.keys(answers).length;
     const totalCells = 9;
 
-    let totalRarity = 0;
-    let count = 0;
+    // Average rarity of genuinely guessed cells only
+    let guessedRarityTotal = 0;
+    let guessedRarityCount = 0;
     for (const key in rarityScores) {
-      totalRarity += rarityScores[key];
-      count++;
+      if (answers[key] && !revealedCells.has(key)) {
+        guessedRarityTotal += rarityScores[key];
+        guessedRarityCount++;
+      }
     }
-    const avgRarity = count > 0 ? Math.round(totalRarity / count) : 0;
+    const avgRarity = guessedRarityCount > 0 ? Math.round(guessedRarityTotal / guessedRarityCount) : 0;
+
+    // Penalized percentile: unguessed cells count as 100% rarity
+    let penalizedTotal = guessedRarityTotal + (9 - guessedRarityCount) * 100;
+    const penalizedAvg = Math.round(penalizedTotal / 9);
 
     const title = document.querySelector('.game-over-title');
     if (won) {
@@ -566,50 +1028,79 @@
       title.style.color = '#e76f51';
     }
 
-    statsEl.innerHTML = `
-      <div class="stat-row">
-        <span class="stat-label">Cells Filled</span>
-        <span class="stat-value">${answeredCount}/${totalCells}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Strikes</span>
-        <span class="stat-value">${strikes}/${MAX_STRIKES}</span>
-      </div>
-      <div class="stat-row">
-        <span class="stat-label">Avg Rarity Score</span>
-        <span class="stat-value">${avgRarity}%</span>
-      </div>
-      <div class="stat-row rarity-explanation">
-        <small>Lower rarity = more unique answers!</small>
-      </div>
-    `;
+    const guessedCount = Object.keys(answers).filter(k => !revealedCells.has(k)).length;
+
+    // Fallback percentile from naive inversion
+    const fallbackPercentile = Math.max(0, Math.round(100 - penalizedAvg));
+
+    function renderStats(percentile) {
+      let percentileColor;
+      if (percentile >= 80) { percentileColor = '#22C55E'; }
+      else if (percentile >= 50) { percentileColor = '#F97316'; }
+      else { percentileColor = '#EF4444'; }
+
+      statsEl.innerHTML = `
+        <div class="stat-row">
+          <span class="stat-label">Cells Filled</span>
+          <span class="stat-value">${guessedCount}/${totalCells}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Strikes</span>
+          <span class="stat-value">${gameMode === 'easy' ? strikes : strikes + '/' + MAX_STRIKES}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Avg Rarity Score</span>
+          <span class="stat-value">${avgRarity}%</span>
+        </div>
+        <div class="percentile-row">
+          <span>Better than <span class="percentile-value" style="color:${percentileColor}">${percentile}%</span> of players</span>
+        </div>
+      `;
+    }
+
+    // Render immediately with fallback
+    renderStats(fallbackPercentile);
+
+    // Record completion to Firebase and get real percentile
+    RarityService.recordCompletion(grid.date, penalizedAvg).then(realPercentile => {
+      if (realPercentile !== null) {
+        renderStats(realPercentile);
+      }
+    });
   }
 
   // ===== SHARE =====
+  function getCellEmoji(cellKey) {
+    if (!answers[cellKey]) return '\u2b1c'; // white square - empty/missed
+    if (revealedCells.has(cellKey)) return '\u2b1c'; // white square - failed/revealed
+    const rarity = rarityScores[cellKey] || 50;
+    if (rarity <= 10) return '\ud83c\udf1f'; // 🌟 star - very rare
+    if (rarity <= 25) return '\ud83d\udfe9'; // 🟩 green - uncommon
+    if (rarity <= 50) return '\ud83d\udfe7'; // 🟧 orange - common
+    return '\ud83d\udfe5'; // 🟥 red - very common
+  }
+
+  function getShareStrikesStr() {
+    if (gameMode === 'easy') return strikes.toString();
+    return '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+  }
+
+  function getGuessedCount() {
+    // Only count cells the user actually guessed (not revealed)
+    return Object.keys(answers).filter(k => !revealedCells.has(k)).length;
+  }
+
   function buildShareText() {
     const totalCells = 9;
     const gridNum = getGridNumber(grid.date);
-    const modeLabel = gameMode === 'easy' ? ' (Easy)' : '';
-    const strikesStr = gameMode === 'easy'
-      ? '\ud83d\udd34'.repeat(Math.min(strikes, 9))
-      : '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    const modeLabel = gameMode === 'easy' ? ' (Easy)' : ' (Hard)';
     let shareText = `ATP Grid #${gridNum}${modeLabel}\n`;
-    shareText += `Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}\n\n`;
+    shareText += `Score: ${getGuessedCount()}/${totalCells} | Strikes: ${getShareStrikesStr()}\n\n`;
 
     for (let r = 0; r < 3; r++) {
       let row = '';
       for (let c = 0; c < 3; c++) {
-        const key = `r${r}c${c}`;
-        if (answers[key]) {
-          const rarity = rarityScores[key] || 50;
-          if (rarity <= 10) row += '\ud83d\udfe9';
-          else if (rarity <= 25) row += '\ud83d\udfe9';
-          else if (rarity <= 50) row += '\ud83d\udfe8';
-          else if (rarity <= 75) row += '\ud83d\udfe7';
-          else row += '\ud83d\udfe5';
-        } else {
-          row += '\u2b1c';
-        }
+        row += getCellEmoji(`r${r}c${c}`);
       }
       shareText += row + '\n';
     }
@@ -620,33 +1111,20 @@
   function buildSharePreviewHTML() {
     const totalCells = 9;
     const gridNum = getGridNumber(grid.date);
-    const modeLabel = gameMode === 'easy' ? ' (Easy)' : '';
-    const strikesStr = gameMode === 'easy'
-      ? '\ud83d\udd34'.repeat(Math.min(strikes, 9))
-      : '\ud83d\udd34'.repeat(strikes) + '\u26aa'.repeat(MAX_STRIKES - strikes);
+    const modeLabel = gameMode === 'easy' ? ' (Easy)' : ' (Hard)';
 
     let gridRows = '';
     for (let r = 0; r < 3; r++) {
       let row = '';
       for (let c = 0; c < 3; c++) {
-        const key = `r${r}c${c}`;
-        if (answers[key]) {
-          const rarity = rarityScores[key] || 50;
-          if (rarity <= 10) row += '\ud83d\udfe9';
-          else if (rarity <= 25) row += '\ud83d\udfe9';
-          else if (rarity <= 50) row += '\ud83d\udfe8';
-          else if (rarity <= 75) row += '\ud83d\udfe7';
-          else row += '\ud83d\udfe5';
-        } else {
-          row += '\u2b1c';
-        }
+        row += getCellEmoji(`r${r}c${c}`);
       }
       gridRows += `<div class="share-grid-row">${row}</div>`;
     }
 
     return `
       <div class="share-title">ATP Grid #${gridNum}${modeLabel}</div>
-      <div class="share-score">Score: ${Object.keys(answers).length}/${totalCells} | Strikes: ${strikesStr}</div>
+      <div class="share-score">Score: ${getGuessedCount()}/${totalCells} | Strikes: ${getShareStrikesStr()}</div>
       <div style="height:8px"></div>
       ${gridRows}
       <div style="height:8px"></div>
@@ -726,14 +1204,19 @@
     const dates = getArchiveDates();
     const todayStr = dates[0];
 
+    const modeLabel = document.getElementById('archive-mode-label');
+    if (modeLabel) {
+      modeLabel.textContent = `Showing ${gameMode === 'easy' ? 'Easy' : 'Hard'} mode progress`;
+    }
+
     list.innerHTML = '';
     dates.forEach((dateStr, idx) => {
       const item = document.createElement('div');
       item.className = 'archive-item';
       if (idx === 0) item.classList.add('today');
 
-      // Check if this grid was completed
-      const saved = getSavedStateForDate(dateStr);
+      // Check if this grid was completed (check current mode)
+      const saved = getSavedStateForDate(dateStr, gameMode);
       const completed = saved && saved.gameOver;
       const answeredCount = saved ? Object.keys(saved.answers || {}).length : 0;
 
@@ -779,15 +1262,20 @@
     strikes = 0;
     gameOver = false;
     rarityScores = {};
+    revealedCells = new Set();
+    sampleAnswers = {};
+    hintCache = {};
 
-    // Load saved state for this date
-    const saved = getSavedStateForDate(dateStr);
+    // Load saved state for this date and current mode
+    const saved = getSavedStateForDate(dateStr, gameMode);
     if (saved) {
       answers = saved.answers || {};
       usedPlayers = new Set(saved.usedPlayers || []);
       strikes = saved.strikes ?? 0;
       gameOver = saved.gameOver || false;
       rarityScores = saved.rarityScores || {};
+      revealedCells = new Set(saved.revealedCells || []);
+      sampleAnswers = saved.sampleAnswers || {};
     }
 
     renderGrid();
@@ -863,9 +1351,28 @@
     }
   }
 
-  function getSavedStateForDate(dateStr) {
+  function getStateKey(dateStr, mode) {
+    mode = mode || gameMode;
+    return `atpgrid_${dateStr}_${mode}`;
+  }
+
+  function getSavedStateForDate(dateStr, mode) {
+    mode = mode || gameMode;
     try {
-      return JSON.parse(localStorage.getItem(`atpgrid_${dateStr}`));
+      // Try mode-specific key first
+      const modeState = JSON.parse(localStorage.getItem(getStateKey(dateStr, mode)));
+      if (modeState) return modeState;
+      // Fallback: migrate old format (no mode suffix) as hard mode
+      if (mode === 'hard') {
+        const oldState = JSON.parse(localStorage.getItem(`atpgrid_${dateStr}`));
+        if (oldState) {
+          // Migrate to new key
+          localStorage.setItem(getStateKey(dateStr, 'hard'), JSON.stringify(oldState));
+          localStorage.removeItem(`atpgrid_${dateStr}`);
+          return oldState;
+        }
+      }
+      return null;
     } catch (e) {
       return null;
     }
@@ -876,13 +1383,16 @@
     const dateStr = grid.date;
     const state = {
       date: dateStr,
+      mode: gameMode,
       answers,
       usedPlayers: Array.from(usedPlayers),
       strikes,
       gameOver,
-      rarityScores
+      rarityScores,
+      revealedCells: Array.from(revealedCells),
+      sampleAnswers
     };
-    localStorage.setItem(`atpgrid_${dateStr}`, JSON.stringify(state));
+    localStorage.setItem(getStateKey(dateStr, gameMode), JSON.stringify(state));
     // Also update archive list status
     renderArchiveList();
   }
@@ -896,6 +1406,8 @@
       strikes = saved.strikes ?? 0;
       gameOver = saved.gameOver || false;
       rarityScores = saved.rarityScores || {};
+      revealedCells = new Set(saved.revealedCells || []);
+      sampleAnswers = saved.sampleAnswers || {};
 
       renderGrid();
       updateStrikesDisplay();
@@ -928,10 +1440,12 @@
         closeSearchModal();
         document.getElementById('game-over-modal').classList.remove('active');
         document.getElementById('how-to-play-modal').classList.remove('active');
+        document.getElementById('player-bio-modal').classList.remove('active');
       }
     });
 
     document.getElementById('close-search').addEventListener('click', closeSearchModal);
+    document.getElementById('hint-btn')?.addEventListener('click', showHint);
     document.getElementById('share-btn').addEventListener('click', shareResults);
     document.getElementById('share-btn-footer')?.addEventListener('click', shareResults);
     document.getElementById('share-copy-btn')?.addEventListener('click', copyShareText);
@@ -948,6 +1462,16 @@
 
     document.getElementById('close-game-over').addEventListener('click', () => {
       document.getElementById('game-over-modal').classList.remove('active');
+    });
+
+    // Player bio modal
+    document.getElementById('close-player-bio').addEventListener('click', () => {
+      document.getElementById('player-bio-modal').classList.remove('active');
+    });
+    document.getElementById('player-bio-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'player-bio-modal') {
+        document.getElementById('player-bio-modal').classList.remove('active');
+      }
     });
 
     // How to play

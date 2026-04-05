@@ -13,7 +13,8 @@ const FIREBASE_CONFIG = {
   databaseURL: "https://atp-grid-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "atp-grid",
   storageBucket: "atp-grid.firebasestorage.app",
-  appId: "1:660725616117:web:02f49fa3ffdf525c8fe4bc"
+  appId: "1:660725616117:web:02f49fa3ffdf525c8fe4bc",
+  measurementId: "G-WVX0HN6WG9"
 };
 
 // Set to true once you've filled in the config above

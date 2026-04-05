@@ -19,6 +19,11 @@ const RarityService = (function() {
           firebase.initializeApp(FIREBASE_CONFIG);
         }
         db = firebase.database();
+        // Initialize Analytics if measurementId is configured
+        if (FIREBASE_CONFIG.measurementId && FIREBASE_CONFIG.measurementId !== 'G-XXXXXXXXXX' && typeof firebase.analytics === 'function') {
+          firebase.analytics();
+          console.log('[Analytics] Firebase Analytics initialized');
+        }
         console.log('[Rarity] Firebase connected');
       } catch (e) {
         console.warn('[Rarity] Firebase init failed, using local fallback:', e.message);
@@ -185,6 +190,54 @@ const RarityService = (function() {
     return Math.max(1, Math.min(99, rarity));
   }
 
+  // Record a grid completion with penalized avg rarity score
+  // Uses a histogram bucket system (0-100 in 1% increments) for efficient percentile calculation
+  async function recordCompletion(dateStr, penalizedAvgRarity) {
+    init();
+    if (!db) return null;
+
+    const bucket = Math.min(100, Math.max(0, Math.round(penalizedAvgRarity)));
+    const ref = db.ref(`completions/${dateStr}`);
+
+    try {
+      // Increment the bucket count and total
+      await ref.child(`buckets/${bucket}`).transaction(current => (current || 0) + 1);
+      await ref.child('total').transaction(current => (current || 0) + 1);
+      return await getPercentile(dateStr, penalizedAvgRarity);
+    } catch (e) {
+      console.warn('[Rarity] Completion record failed:', e.message);
+      return null;
+    }
+  }
+
+  // Calculate real percentile: what % of players have a HIGHER (worse) avg rarity than you
+  async function getPercentile(dateStr, penalizedAvgRarity) {
+    init();
+    if (!db) return null;
+
+    const bucket = Math.min(100, Math.max(0, Math.round(penalizedAvgRarity)));
+
+    try {
+      const snapshot = await db.ref(`completions/${dateStr}`).once('value');
+      const data = snapshot.val();
+      if (!data || !data.buckets || !data.total) return null;
+
+      const total = data.total;
+      if (total < 10) return null; // Not enough data yet
+
+      // Count players with a HIGHER avg rarity (worse than you)
+      let higherCount = 0;
+      for (let i = bucket + 1; i <= 100; i++) {
+        higherCount += (data.buckets[i] || 0);
+      }
+
+      return Math.round((higherCount / total) * 100);
+    } catch (e) {
+      console.warn('[Rarity] Percentile fetch failed:', e.message);
+      return null;
+    }
+  }
+
   function isLive() {
     return db !== null;
   }
@@ -195,6 +248,8 @@ const RarityService = (function() {
     preloadDate,
     listenForUpdates,
     setGridContext,
-    isLive
+    isLive,
+    recordCompletion,
+    getPercentile
   };
 })();

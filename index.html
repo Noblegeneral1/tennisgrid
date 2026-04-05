@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ATP Grid | Daily Tennis Trivia</title>
   <meta name="description" content="A daily tennis trivia game. Fill the 3x3 grid by finding ATP players who match both row and column categories. New puzzle every day!">
+  <link rel="canonical" href="https://atpgrid.com">
   <meta name="theme-color" content="#1a3c34">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -72,11 +73,6 @@
         <button class="mode-btn active" data-mode="hard">Hard</button>
       </div>
     </div>
-    <div id="subheader-rarity" class="subheader-rarity" style="display:none">
-      <span class="subheader-rarity-label">Current Rarity</span>
-      <span id="subheader-rarity-value" class="subheader-rarity-value"></span>
-    </div>
-    <div id="rarity-mode" class="rarity-mode-badge" style="display:none"></div>
     <div id="countdown-timer" class="countdown-timer"></div>
   </header>
 
@@ -87,6 +83,7 @@
       <h3>Past Grids</h3>
       <button id="close-archive" class="modal-close">&times;</button>
     </div>
+    <div id="archive-mode-label" class="archive-mode-label"></div>
     <div id="archive-list" class="archive-list"></div>
   </div>
 
@@ -109,6 +106,10 @@
         <input type="text" id="search-input" placeholder="Search for any ATP player..." autocomplete="off" spellcheck="false">
       </div>
       <div id="guess-error" class="guess-error"></div>
+      <div id="hint-container" class="hint-container" style="display:none;">
+        <button id="hint-btn" class="hint-btn">💡 Hint</button>
+        <div id="hint-text" class="hint-text"></div>
+      </div>
       <div id="search-results" class="search-results"></div>
     </div>
   </div>
@@ -167,11 +168,15 @@
           <h3>Rarity Scoring</h3>
           <p>After filling a cell, you'll see a rarity %. Lower = more unique answer.</p>
           <div class="rarity-legend">
-            <span class="rarity-legend-item"><span class="rarity-dot" style="background: rgba(45,106,79,0.95)"></span> Very Rare</span>
-            <span class="rarity-legend-item"><span class="rarity-dot" style="background: rgba(82,183,136,0.7)"></span> Uncommon</span>
-            <span class="rarity-legend-item"><span class="rarity-dot" style="background: rgba(244,162,97,0.7)"></span> Common</span>
-            <span class="rarity-legend-item"><span class="rarity-dot" style="background: rgba(231,111,81,0.75)"></span> Very Common</span>
+            <span class="rarity-legend-item"><span class="rarity-dot" style="background: #FACC15"></span> Very Rare (0-10%)</span>
+            <span class="rarity-legend-item"><span class="rarity-dot" style="background: #22C55E"></span> Uncommon (11-25%)</span>
+            <span class="rarity-legend-item"><span class="rarity-dot" style="background: #F97316"></span> Common (26-50%)</span>
+            <span class="rarity-legend-item"><span class="rarity-dot" style="background: #EF4444"></span> Very Common (51-100%)</span>
           </div>
+        </div>
+        <div class="htp-section">
+          <h3>Player Stats</h3>
+          <p>Tap any player on the grid to view their full career stats, including Grand Slams, titles, surface wins, and more.</p>
         </div>
         <div class="htp-section">
           <h3>Today's Categories</h3>
@@ -208,9 +213,10 @@
     </div>
   </footer>
 
-  <!-- Firebase SDK (for real-time rarity) -->
+  <!-- Firebase SDK (for real-time rarity + analytics) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
 
   <!-- SCRIPTS (order matters) -->
   <script src="js/icons.js?v=22"></script>
@@ -221,6 +227,17 @@
   <script src="js/firebase-config.js?v=22"></script>
   <script src="js/rarity.js?v=22"></script>
   <script src="js/app.js?v=22"></script>
+  <!-- PLAYER BIO MODAL -->
+  <div id="player-bio-modal" class="modal-overlay">
+    <div class="modal-content player-bio-content">
+      <button id="close-player-bio" class="modal-close">&times;</button>
+      <div id="player-bio-header" class="player-bio-header"></div>
+      <div id="player-bio-facts" class="player-bio-facts"></div>
+    </div>
+  </div>
+
+  <div id="error-toast" class="error-toast"></div>
+  <div id="fact-toast" class="fact-toast"></div>
   <script>
     document.getElementById('player-count').textContent = PLAYERS.length + ' players';
   </script>

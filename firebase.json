@@ -16,6 +16,17 @@
       "scripts",
       "scripts/**",
       "server.rb"
+    ],
+    "headers": [
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Link",
+            "value": "<https://atpgrid.com>; rel=\"canonical\""
+          }
+        ]
+      }
     ]
   }
 }
