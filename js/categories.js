@@ -663,6 +663,60 @@ const CATEGORIES = [
   { id: "title_after_30", label: "Won a Title After 30", shortLabel: "Won ATP Title After 30", type: "stat", icon: "clock", check: p => p.ageLastTitle >= 30 },
   { id: "long_career", label: "15+ Year Career", shortLabel: "15+ Year Career", type: "stat", icon: "clock", check: p => p.careerLength >= 15 },
   { id: "big_server", label: "Big Server (10%+ Ace Rate)", shortLabel: "10%+ Ace Rate", type: "stat", icon: "zap", check: p => p.aceRate >= 10 },
+
+  // ===== BROADER STAT CATEGORIES =====
+  { id: "titles_1plus", label: "Won At Least 1 Title", shortLabel: "1+ Career Title", type: "stat", check: p => p.titles >= 1 },
+  { id: "titles_3plus", label: "Won 3+ Career Titles", shortLabel: "3+ Career Titles", type: "stat", check: p => p.titles >= 3 },
+  { id: "wins_100plus", label: "100+ Career Match Wins", shortLabel: "100+ Career Wins", type: "stat", check: p => p.careerWins >= 100 },
+  { id: "wins_200plus", label: "200+ Career Match Wins", shortLabel: "200+ Career Wins", type: "stat", check: p => p.careerWins >= 200 },
+  { id: "peaked_top50", label: "Career-High Top 50", shortLabel: "Career High Top 50", type: "stat", check: p => p.peakRanking <= 50 },
+  { id: "peaked_top100", label: "Career-High Top 100", shortLabel: "Career High Top 100", type: "stat", check: p => p.peakRanking <= 100 },
+  { id: "clay_50_wins", label: "50+ Wins on Clay", shortLabel: "50+ Clay Wins", type: "stat", check: p => p.clayWins >= 50 },
+  { id: "hard_50_wins", label: "50+ Wins on Hard", shortLabel: "50+ Hard Wins", type: "stat", check: p => p.hardWins >= 50 },
+  { id: "hard_200_wins", label: "200+ Wins on Hard", shortLabel: "200+ Hard Wins", type: "stat", check: p => p.hardWins >= 200 },
+  { id: "grass_20_wins", label: "20+ Wins on Grass", shortLabel: "20+ Grass Wins", type: "stat", check: p => p.grassWins >= 20 },
+  { id: "career_10plus", label: "10+ Year Career", shortLabel: "10+ Year Career", type: "stat", check: p => p.careerLength >= 10 },
+  { id: "career_20plus", label: "20+ Year Career", shortLabel: "20+ Year Career", type: "stat", check: p => p.careerLength >= 20 },
+  { id: "first_title_before_23", label: "Won First Title Before 23", shortLabel: "1st Title Before 23", type: "stat", check: p => p.ageFirstTitle > 0 && p.ageFirstTitle < 23 },
+  { id: "title_after_28", label: "Won a Title After 28", shortLabel: "Title After 28", type: "stat", check: p => p.ageLastTitle >= 28 },
+  { id: "ace_rate_5plus", label: "5%+ Ace Rate", shortLabel: "5%+ Ace Rate", type: "stat", check: p => p.aceRate >= 5 },
+  { id: "ace_rate_15plus", label: "15%+ Ace Rate", shortLabel: "15%+ Ace Rate", type: "stat", check: p => p.aceRate >= 15 },
+
+  // ===== HEIGHT / PHYSICAL =====
+  { id: "height_190plus", label: "190cm+ (6'3\"+)", shortLabel: "6'3\"+ Tall", type: "stat", check: p => p.heightCm >= 190 },
+  { id: "height_185plus", label: "185cm+ (6'1\"+)", shortLabel: "6'1\"+ Tall", type: "stat", check: p => p.heightCm >= 185 },
+  { id: "height_under_183", label: "Under 183cm (6'0\")", shortLabel: "Under 6'0\"", type: "stat", check: p => p.heightCm > 0 && p.heightCm < 183 },
+  { id: "height_under_175", label: "Under 175cm (5'9\")", shortLabel: "Under 5'9\"", type: "stat", check: p => p.heightCm > 0 && p.heightCm < 175 },
+
+  // ===== MORE COUNTRIES =====
+  { id: "india", label: "Indian", shortLabel: "India", type: "country", check: p => p.country === "India" },
+  { id: "greece", label: "Greek", shortLabel: "Greece", type: "country", check: p => p.country === "Greece" },
+  { id: "norway", label: "Norwegian", shortLabel: "Norway", type: "country", check: p => p.country === "Norway" },
+  { id: "denmark", label: "Danish", shortLabel: "Denmark", type: "country", check: p => p.country === "Denmark" },
+  { id: "colombia", label: "Colombian", shortLabel: "Colombia", type: "country", check: p => p.country === "Colombia" },
+  { id: "ukraine", label: "Ukrainian", shortLabel: "Ukraine", type: "country", check: p => p.country === "Ukraine" },
+  { id: "portugal", label: "Portuguese", shortLabel: "Portugal", type: "country", check: p => p.country === "Portugal" },
+  { id: "georgia", label: "Georgian", shortLabel: "Georgia", type: "country", check: p => p.country === "Georgia" },
+  { id: "bulgaria", label: "Bulgarian", shortLabel: "Bulgaria", type: "country", check: p => p.country === "Bulgaria" },
+  { id: "hungary", label: "Hungarian", shortLabel: "Hungary", type: "country", check: p => p.country === "Hungary" },
+  { id: "finland", label: "Finnish", shortLabel: "Finland", type: "country", check: p => p.country === "Finland" },
+  { id: "israel", label: "Israeli", shortLabel: "Israel", type: "country", check: p => p.country === "Israel" },
+  { id: "chinese_taipei", label: "Chinese Taipei", shortLabel: "Chinese Taipei", type: "country", check: p => p.country === "Chinese Taipei" },
+  { id: "korea", label: "South Korean", shortLabel: "South Korea", type: "country", check: p => p.country === "South Korea" },
+  { id: "ecuador", label: "Ecuadorian", shortLabel: "Ecuador", type: "country", check: p => p.country === "Ecuador" },
+  { id: "slovakia", label: "Slovak", shortLabel: "Slovakia", type: "country", check: p => p.country === "Slovakia" },
+  { id: "slovenia", label: "Slovenian", shortLabel: "Slovenia", type: "country", check: p => p.country === "Slovenia" },
+  { id: "kazakhstan", label: "Kazakhstani", shortLabel: "Kazakhstan", type: "country", check: p => p.country === "Kazakhstan" },
+  { id: "uzbekistan", label: "Uzbekistani", shortLabel: "Uzbekistan", type: "country", check: p => p.country === "Uzbekistan" },
+
+  // ===== BROADER REGIONS =====
+  { id: "asian", label: "Asian Player", shortLabel: "Asian", type: "country", check: p => ["Japan", "South Korea", "India", "Chinese Taipei", "Thailand", "Philippines", "Kazakhstan", "Uzbekistan", "China"].includes(p.country) },
+  { id: "african", label: "African Player", shortLabel: "African", type: "country", check: p => ["South Africa", "Morocco", "Tunisia", "Egypt", "Zimbabwe"].includes(p.country) },
+  { id: "north_american", label: "North American Player", shortLabel: "North American", type: "country", check: p => ["USA", "Canada", "Mexico"].includes(p.country) },
+  { id: "oceanian", label: "Oceanian Player", shortLabel: "Oceanian", type: "country", check: p => ["Australia", "New Zealand"].includes(p.country) },
+  { id: "slavic", label: "Slavic Nation Player", shortLabel: "Slavic Nation", type: "country", check: p => ["Serbia", "Croatia", "Czech Republic", "Slovakia", "Slovenia", "Poland", "Russia", "Bulgaria", "Ukraine", "Belarus", "Bosnia and Herzegovina"].includes(p.country) },
+  { id: "scandinavian", label: "Scandinavian Player", shortLabel: "Scandinavian", type: "country", check: p => ["Sweden", "Norway", "Denmark", "Finland"].includes(p.country) },
+  { id: "latin_american", label: "Latin American Player", shortLabel: "Latin American", type: "country", check: p => ["Argentina", "Brazil", "Chile", "Colombia", "Ecuador", "Uruguay", "Venezuela", "Mexico", "Peru", "Dominican Republic", "Bolivia"].includes(p.country) },
 ];
 
 // Get a category by ID

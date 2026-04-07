@@ -330,6 +330,36 @@
     european: "Represents a European nation",
     non_european: "Represents a nation outside of Europe",
     south_american: "Represents a South American nation",
+    // Broader stats
+    titles_1plus: "Won at least 1 ATP singles title",
+    titles_3plus: "Won 3 or more ATP singles titles",
+    wins_100plus: "100+ career match wins on the ATP Tour",
+    wins_200plus: "200+ career match wins on the ATP Tour",
+    peaked_top50: "Career-high ranking in the Top 50",
+    peaked_top100: "Career-high ranking in the Top 100",
+    clay_50_wins: "Won 50+ career matches on clay courts",
+    hard_50_wins: "Won 50+ career matches on hard courts",
+    hard_200_wins: "Won 200+ career matches on hard courts",
+    grass_20_wins: "Won 20+ career matches on grass courts",
+    career_10plus: "Professional career spanning 10+ years",
+    career_20plus: "Professional career spanning 20+ years",
+    first_title_before_23: "Won their first ATP title before turning 23",
+    title_after_28: "Won an ATP title at age 28 or older",
+    ace_rate_5plus: "Career ace rate of 5% or higher",
+    ace_rate_15plus: "Career ace rate of 15% or higher",
+    // Height
+    height_190plus: "Listed height of 190cm (6'3\") or taller",
+    height_185plus: "Listed height of 185cm (6'1\") or taller",
+    height_under_183: "Listed height under 183cm (6'0\")",
+    height_under_175: "Listed height under 175cm (5'9\")",
+    // Regions
+    asian: "Represents an Asian nation",
+    african: "Represents an African nation",
+    north_american: "Represents USA, Canada, or Mexico",
+    oceanian: "Represents Australia or New Zealand",
+    slavic: "Represents a Slavic nation",
+    scandinavian: "Represents a Scandinavian nation",
+    latin_american: "Represents a Latin American nation",
   };
 
   function getCategoryDescription(cat) {

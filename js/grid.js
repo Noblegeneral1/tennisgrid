@@ -66,7 +66,23 @@ const ALL_CANDIDATE_IDS = [
   // Height / Surface / Age / Career
   "tall_player", "short_player", "clay_100_wins", "hard_100_wins",
   "grass_50_wins", "clay_200_wins", "young_first_title", "title_after_30",
-  "long_career", "big_server"
+  "long_career", "big_server",
+  // Broader stats
+  "titles_1plus", "titles_3plus", "wins_100plus", "wins_200plus",
+  "peaked_top50", "peaked_top100",
+  "clay_50_wins", "hard_50_wins", "hard_200_wins", "grass_20_wins",
+  "career_10plus", "career_20plus",
+  "first_title_before_23", "title_after_28",
+  "ace_rate_5plus", "ace_rate_15plus",
+  // Height / Physical
+  "height_190plus", "height_185plus", "height_under_183", "height_under_175",
+  // More countries
+  "india", "greece", "norway", "denmark", "colombia", "ukraine", "portugal",
+  "georgia", "bulgaria", "hungary", "finland", "israel", "chinese_taipei",
+  "korea", "ecuador", "slovakia", "slovenia", "kazakhstan", "uzbekistan",
+  // Broader regions
+  "asian", "african", "north_american", "oceanian",
+  "slavic", "scandinavian", "latin_american"
 ];
 
 // Pairs of categories that conflict / are contradictory / too overlapping
@@ -209,6 +225,90 @@ const CONFLICTS = [
   ["clay_100_wins", "clay_200_wins"],
   ["no_titles", "young_first_title"],
   ["no_titles", "title_after_30"],
+
+  // ===== NEW BROADER CATEGORY CONFLICTS =====
+  // Title tiers are subsets of each other
+  ["titles_1plus", "titles_3plus"], ["titles_1plus", "titles_5plus"],
+  ["titles_1plus", "titles_10plus"], ["titles_1plus", "titles_20plus"],
+  ["titles_3plus", "titles_5plus"], ["titles_3plus", "titles_10plus"],
+  ["titles_3plus", "titles_20plus"],
+  ["titles_1plus", "no_titles"], ["titles_3plus", "no_titles"],
+  ["titles_1plus", "one_title_wonder"],
+  // Win tiers are subsets
+  ["wins_100plus", "wins_200plus"], ["wins_100plus", "wins_300plus"],
+  ["wins_100plus", "wins_500plus"],
+  ["wins_200plus", "wins_300plus"], ["wins_200plus", "wins_500plus"],
+  ["wins_100plus", "sub_100_wins"], ["wins_100plus", "sub_50_wins"],
+  ["wins_200plus", "sub_100_wins"], ["wins_200plus", "sub_50_wins"],
+  // Ranking tiers
+  ["peaked_top50", "peaked_top20"], ["peaked_top50", "peaked_top10"],
+  ["peaked_top50", "peaked_top5"], ["peaked_top50", "peaked_top3"],
+  ["peaked_top50", "peaked_no1"],
+  ["peaked_top100", "peaked_top50"], ["peaked_top100", "peaked_top20"],
+  ["peaked_top100", "peaked_top10"], ["peaked_top100", "peaked_top5"],
+  ["peaked_top100", "peaked_top3"], ["peaked_top100", "peaked_no1"],
+  ["peaked_top50", "peaked_outside50"], ["peaked_top100", "peaked_outside50"],
+  ["peaked_top50", "never_top10"], ["peaked_top50", "never_top20"],
+  // Surface win tiers
+  ["clay_50_wins", "clay_100_wins"], ["clay_50_wins", "clay_200_wins"],
+  ["hard_50_wins", "hard_100_wins"], ["hard_50_wins", "hard_200_wins"],
+  ["hard_100_wins", "hard_200_wins"],
+  ["grass_20_wins", "grass_50_wins"],
+  // Career length tiers
+  ["career_10plus", "career_20plus"], ["career_10plus", "long_career"],
+  ["career_20plus", "long_career"],
+  // Age-of-title tiers
+  ["first_title_before_23", "young_first_title"],
+  ["title_after_28", "title_after_30"],
+  ["no_titles", "titles_1plus"], ["no_titles", "titles_3plus"],
+  ["no_titles", "first_title_before_23"], ["no_titles", "title_after_28"],
+  // Ace rate tiers
+  ["ace_rate_5plus", "ace_rate_15plus"], ["ace_rate_5plus", "big_server"],
+  ["ace_rate_15plus", "big_server"],
+  // Height tiers
+  ["height_190plus", "height_185plus"], ["height_190plus", "tall_player"],
+  ["height_185plus", "tall_player"],
+  ["height_under_183", "height_under_175"], ["height_under_183", "short_player"],
+  ["height_under_175", "short_player"],
+  ["height_190plus", "height_under_183"], ["height_190plus", "height_under_175"],
+  ["height_185plus", "height_under_175"],
+  ["tall_player", "height_under_183"], ["tall_player", "height_under_175"],
+  ["short_player", "height_185plus"], ["short_player", "height_190plus"],
+  // Region vs country conflicts
+  ["asian", "japan"], ["asian", "india"], ["asian", "korea"], ["asian", "chinese_taipei"],
+  ["asian", "kazakhstan"], ["asian", "uzbekistan"],
+  ["asian", "european"], ["asian", "non_european"],
+  ["african", "south_africa"], ["african", "european"], ["african", "non_european"],
+  ["north_american", "usa"], ["north_american", "canada"],
+  ["north_american", "european"], ["north_american", "non_european"],
+  ["oceanian", "australia"], ["oceanian", "new_zealand"],
+  ["oceanian", "european"], ["oceanian", "non_european"],
+  ["slavic", "serbia"], ["slavic", "croatia"], ["slavic", "czech"],
+  ["slavic", "poland"], ["slavic", "russia"], ["slavic", "bulgaria"],
+  ["slavic", "ukraine"], ["slavic", "slovakia"], ["slavic", "slovenia"],
+  ["scandinavian", "sweden"], ["scandinavian", "norway"],
+  ["scandinavian", "denmark"], ["scandinavian", "finland"],
+  ["latin_american", "south_american"],
+  ["latin_american", "argentina"], ["latin_american", "brazil"],
+  ["latin_american", "chile"], ["latin_american", "colombia"], ["latin_american", "ecuador"],
+  ["latin_american", "european"], ["latin_american", "non_european"],
+  // New countries vs regions
+  ["european", "india"], ["european", "korea"], ["european", "chinese_taipei"],
+  ["european", "kazakhstan"], ["european", "uzbekistan"], ["european", "ecuador"],
+  ["european", "colombia"], ["european", "israel"],
+  ["non_european", "greece"], ["non_european", "norway"], ["non_european", "denmark"],
+  ["non_european", "ukraine"], ["non_european", "portugal"], ["non_european", "georgia"],
+  ["non_european", "bulgaria"], ["non_european", "hungary"], ["non_european", "finland"],
+  ["non_european", "slovakia"], ["non_european", "slovenia"],
+  // Broad stats with underdogs — too easy/boring
+  ["peaked_top100", "no_titles"],
+  ["wins_100plus", "no_titles"],
+  // Davis Cup appears too frequently — add conflicts to reduce it
+  ["davis_cup", "olympic_gold"], ["davis_cup", "atp_finals"],
+  ["davis_cup", "year_end_no1"], ["davis_cup", "masters_5plus"],
+  ["davis_cup", "long_career"], ["davis_cup", "career_10plus"],
+  ["davis_cup", "career_20plus"], ["davis_cup", "wins_200plus"],
+  ["davis_cup", "wins_300plus"],
 ];
 
 // Check if two category IDs conflict
@@ -264,6 +364,18 @@ function generateDailyGrid(dateStr) {
     dateStr = today.toISOString().split('T')[0];
   }
 
+  // Birthday easter egg: April 11 grid — Rohan Cameron valid for center cell only
+  if (dateStr === '2026-04-11') {
+    const rows = [getCategoryById("davis_cup"), getCategoryById("oceanian"), getCategoryById("wins_200plus")];
+    const cols = [getCategoryById("era_2000"), getCategoryById("height_185plus"), getCategoryById("titles_5plus")];
+    return {
+      date: dateStr,
+      rows,
+      cols,
+      validAnswers: rows.map(r => cols.map(c => getPlayersForIntersection(r, c).map(p => p.id)))
+    };
+  }
+
   const seed = dateToSeed(dateStr);
   const rng = mulberry32(seed);
 
@@ -306,12 +418,13 @@ function generateDailyGrid(dateStr) {
     const rowCats = picked.slice(0, 3);
     const colCats = picked.slice(3, 6);
 
-    // Validate: every cell must have at least 5 valid players
+    // Validate: every cell must have at least 10 valid players
+    // This ensures there are always both obvious and niche options per cell
     let valid = true;
     for (const rowCat of rowCats) {
       for (const colCat of colCats) {
         const matches = getPlayersForIntersection(rowCat, colCat);
-        if (matches.length < 5) {
+        if (matches.length < 10) {
           valid = false;
           break;
         }

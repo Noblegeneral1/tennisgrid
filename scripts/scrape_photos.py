@@ -25,7 +25,7 @@ OUTPUT_JS = os.path.join(PROJECT_DIR, "js", "player-photos.js")
 
 WIKI_API = "https://en.wikipedia.org/w/api.php"
 THUMB_SIZE = 200
-REQUEST_DELAY = 0.2  # 200ms between requests (Wikipedia rate limit)
+REQUEST_DELAY = 0.5  # 500ms between requests (Wikipedia rate limit)
 
 
 def parse_player_names(filepath):
@@ -72,11 +72,24 @@ def fetch_wiki_thumbnail(title):
         "User-Agent": "TennisGridBot/1.0 (player photo scraper; educational project)"
     })
 
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError, json.JSONDecodeError) as e:
-        raise RuntimeError(f"API request failed for '{title}': {e}")
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                retry_after = int(e.headers.get("Retry-After", "2"))
+                sleep_for = retry_after * (2 ** attempt)
+                print(f"  Rate limited, retrying in {sleep_for}s...")
+                time.sleep(sleep_for)
+                continue
+            raise RuntimeError(f"API request failed for '{title}': {e}")
+        except (urllib.error.URLError, OSError, json.JSONDecodeError) as e:
+            raise RuntimeError(f"API request failed for '{title}': {e}")
+    else:
+        raise RuntimeError(f"Exceeded retries for '{title}' due to rate limiting")
 
     pages = data.get("query", {}).get("pages", {})
     for page in pages.values():

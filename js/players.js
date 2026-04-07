@@ -4993,7 +4993,7 @@ const PLAYER_DATA = [
   ["Rafael Osuna","Mexico",{ao:0,rg:0,w:0,uso:0},1,22,0,0,"R",[1960],9999,{cw:11,hw:3,aft:30,alt:30,cl:2}],
   ["Ron Holmberg","USA",{ao:0,rg:0,w:0,uso:0},1,54,0,0,"R",[1960,1970],9999,{ht:185,cw:11,hw:15,gw:17,aft:30,alt:30,cl:5}],
   ["Teimuraz Kakulia","Russia",{ao:0,rg:0,w:0,uso:0},0,50,0,0,"R",[1960,1970],9999,{ht:170,cw:12,hw:3,gw:17,cl:11}],
-  ["Rohan Cameron","New Zealand",{ao:0,rg:0,w:0,uso:0},0,0,0,16,"R",[2020],1500],
+  ["Rohan Cameron","New Zealand",{ao:0,rg:0,w:0,uso:0},0,0,0,16,"R",[2020],1500,{ht:188}],
 ];
 
 
