@@ -666,6 +666,13 @@
       const initials = player.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
       const hasPhoto = typeof PLAYER_PHOTOS !== 'undefined' && PLAYER_PHOTOS[player.id];
       const photoSrc = hasPhoto ? PLAYER_PHOTOS[player.id] : '';
+      // Format era string from decades (e.g., "2000s - 2020s")
+      let eraStr = '';
+      if (player.decades && player.decades.length > 0) {
+        const first = player.decades[0];
+        const last = player.decades[player.decades.length - 1];
+        eraStr = first === last ? `${first}s` : `${first}s - ${last}s`;
+      }
       item.innerHTML = `
         <div class="search-avatar-wrap">
           ${photoSrc
@@ -674,8 +681,13 @@
           <span class="search-avatar-fallback" ${photoSrc ? 'style="display:none;"' : ''}>${initials}</span>
         </div>
         <div class="search-info">
-          <span class="search-name">${player.name}</span> <span class="search-flag">${getCountryFlag(player.country)}</span>
+          <div class="search-name-row">
+            <span class="search-name">${player.name}</span>
+            <span class="search-flag">${getCountryFlag(player.country)}</span>
+          </div>
+          ${eraStr ? `<span class="search-era">${eraStr}</span>` : ''}
         </div>
+        <button class="search-select-btn" tabindex="-1">Select</button>
       `;
       item.addEventListener('click', () => selectPlayer(player));
       results.appendChild(item);
@@ -1464,6 +1476,12 @@
     document.getElementById('search-modal').addEventListener('click', (e) => {
       if (e.target.id === 'search-modal') closeSearchModal();
     });
+
+    // Dismiss keyboard when tapping search results area (outside input)
+    document.getElementById('search-results')?.addEventListener('touchstart', () => {
+      const inp = document.getElementById('search-input');
+      if (inp && document.activeElement === inp) inp.blur();
+    }, { passive: true });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
