@@ -305,6 +305,5 @@ const PLAYER_PHOTOS = {
   "yosuke_watanuki": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Yosuke_Watanuki_%28cropped%29.jpeg/250px-Yosuke_Watanuki_%28cropped%29.jpeg",
   "younes_el_aynaoui": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Aynaoui.jpg/250px-Aynaoui.jpg",
   "yuichi_sugita": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Sugita_WM17_%289%29_%2836050660651%29.jpg/250px-Sugita_WM17_%289%29_%2836050660651%29.jpg",
-  "zsombor_piros": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Piros_WMQ23_%2853061881714%29.jpg/250px-Piros_WMQ23_%2853061881714%29.jpg",
-  "rohan_cameron": "https://i.imgur.com/JzLkaGK.jpeg"
+  "zsombor_piros": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Piros_WMQ23_%2853061881714%29.jpg/250px-Piros_WMQ23_%2853061881714%29.jpg"
 };
